@@ -1,1 +1,19 @@
+# Build artifacts
+build/
 dist/
+*.spec
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Backups
+Backups/
+*.7z
+*.zip
+*.bak
+
+# OS generated
+.DS_Store
+Thumbs.db
