@@ -1,12 +1,17 @@
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
 # Build artifacts
 build/
 dist/
 *.spec
 *.egg-info/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.manifest
 
 # Backups
 Backups/
@@ -14,6 +19,25 @@ Backups/
 *.zip
 *.bak
 
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
 # OS generated
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.temp
