@@ -37,7 +37,6 @@ IT-Admin-Toolkit/
 │   ├── 📄 winget.py            # Winget application definitions
 │   ├── 📄 choco_apps.py        # Chocolatey application definitions
 │   ├── 📄 script_loader.py     # Auto-loads .ps1 scripts from scripts folder
-
 │   ├── 📄 scripts.py           # Hardcoded PowerShell script buttons
 │   └── 📄 colors.py            # Theme colors
 ├── 📁 ui/

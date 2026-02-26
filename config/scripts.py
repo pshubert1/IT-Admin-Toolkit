@@ -52,6 +52,13 @@ MAINTENANCE_SCRIPTS = [
         "Clears the DNS resolver cache",
         "Dark.TButton"
     ),
+    
+    (
+        "💾 Axcient Full Backup",
+        r'$agentPath = "${env:ProgramFiles(x86)}\Axcient\x360Recover Agent"; & "$agentPath\x360recover-agent.exe" --full-backup',
+        "Starts a full Axcient D2C backup",
+        "Dark.TButton"
+    ),
 ]
 
 
