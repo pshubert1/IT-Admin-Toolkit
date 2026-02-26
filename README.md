@@ -318,5 +318,3 @@ Output options:
    → Reduce time range (hours)
    → Add Event ID filter
    → Limit to specific log (System vs All)
-
-================================================================================
