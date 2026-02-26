@@ -147,8 +147,9 @@ IT-Admin-Toolkit/
 ➕ NEW APPLICATIONS (Winget)
 
    1. Open: config/winget.py
+
    2. Add to category:
-```plaintext
+```python
       ("🌐 Browsers", [
           ("Google Chrome", "Google.Chrome"),
           ("Firefox", "Mozilla.Firefox"),  ← ADD HERE
@@ -159,8 +160,9 @@ IT-Admin-Toolkit/
 ➕ NEW APPLICATIONS (Chocolatey)
 
    1. Open: config/choco_apps.py
+
    2. Add to category:
-```plaintext
+```python
       ("🔧 Utilities", [
           ("7-Zip", "7zip"),
           ("Notepad++", "notepadplusplus"),  ← ADD HERE
@@ -172,7 +174,7 @@ IT-Admin-Toolkit/
 
    1. Create .ps1 file in: scripts/ or scripts/[Category]/
    2. Add header:
-```plaintext
+```python
       # NAME: 🚀 My Script Name
       # DESCRIPTION: What this does
       # STYLE: Dark.TButton
@@ -186,13 +188,15 @@ IT-Admin-Toolkit/
 
    1. Open: config/scripts.py
    2. Add entry:
-  ```plaintext
+
+  ```python
       (
           "🛡️ Button Name",
           "Get-Command | Format-List",  # PowerShell command
           "Description shown on hover",
           "Dark.TButton"  # or Warning.TButton, Danger.TButton
       ),
+
   ```
    3. Restart app
 
