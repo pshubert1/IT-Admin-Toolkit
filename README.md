@@ -53,6 +53,7 @@ IT-Admin-Toolkit/
 ├── 📄 IT-Admin-Toolkit.spec    # PyInstaller build config
 ├── 📄 Build.ps1               # 🏗️ Build + Backup (RECOMMENDED)
 ├── 📄 Backup.ps1              # Source backup only (keeps last 10)
+├── 📄 push.ps1                # 🚀 One-command Git push workflow
 └── 📄 README.md
 ```
 
