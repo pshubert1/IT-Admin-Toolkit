@@ -173,6 +173,7 @@ IT-Admin-Toolkit/
 ➕ NEW POWERSHELL SCRIPTS (Auto-detected)
 
    1. Create .ps1 file in: scripts/ or scripts/[Category]/
+
    2. Add header:
 ```python
       # NAME: 🚀 My Script Name
