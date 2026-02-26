@@ -188,16 +188,20 @@ IT-Admin-Toolkit/
 ➕ NEW POWERSHELL SCRIPTS (Hardcoded)
 
    1. Open: config/scripts.py
+
    2. Add entry:
 
   ```python
       (
           "🛡️ Button Name",
-          "Get-Command | Format-List",  # PowerShell command
-          "Description shown on hover",
-          "Dark.TButton"  # or Warning.TButton, Danger.TButton
-      ),
 
+          "Get-Command | Format-List",  # PowerShell command
+
+          "Description shown on hover",
+
+          "Dark.TButton"  # or Warning.TButton, Danger.TButton
+
+      ),
   ```
    3. Restart app
 
