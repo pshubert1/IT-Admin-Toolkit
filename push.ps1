@@ -14,6 +14,7 @@ if (Test-Path ".\Backup_App.ps1") {
 }
 #Push to Github
 git add .
+Write-Host "Type: 'Push-Git' to commit all changes"
 $commitMsg = Read-Host "Enter commit message"
 git commit -m $commitMsg
 git push
