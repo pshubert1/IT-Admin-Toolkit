@@ -159,6 +159,7 @@ IT-Admin-Toolkit/
    3. Save & restart app
 
 ➕ NEW POWERSHELL SCRIPTS (Auto-detected)
+
    1. Create .ps1 file in: scripts/ or scripts/[Category]/
    2. Add header:
 ```plaintext
