@@ -191,7 +191,7 @@ IT-Admin-Toolkit/
 
    2. Add entry:
 
-  ```python
+   ```python
 
       (
 
@@ -206,7 +206,7 @@ IT-Admin-Toolkit/
 
       ),
 
-  ```
+   ```
 
    3. Restart app
 🎨 CUSTOM COLORS
