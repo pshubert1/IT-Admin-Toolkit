@@ -8,51 +8,54 @@ Run: .\Build.ps1
    ↳ Keeps only last 10 backups
    ↳ Everything you need in ONE COMMAND
 
-📁 FOLDER STRUCTURE
--------------------------
+## 📁 FOLDER STRUCTURE
+
+```plaintext
 IT-Admin-Toolkit/
-├── 📁 Backups/ # Versioned backups (*.7z) - max 10 kept
+├── 📁 Backups/                 # Versioned backups (*.7z) - max 10 kept
 ├── 📁 config/
-│ ├── 📄 init.py
-│ ├── 📄 winget.py # Winget application definitions
-│ ├── 📄 choco_apps.py # Chocolatey application definitions
-│ ├── 📄 script_loader.py # Auto-loads .ps1 scripts from scripts folder
-│ ├── 📄 scripts.py # Hardcoded PowerShell script buttons
-│ └── 📄 colors.py # Theme colors
+│   ├── 📄 __init__.py
+│   ├── 📄 winget.py            # Winget application definitions
+│   ├── 📄 choco_apps.py        # Chocolatey application definitions
+│   ├── 📄 script_loader.py     # Auto-loads .ps1 scripts from scripts folder
+│   ├── 📄 scripts.py           # Hardcoded PowerShell script buttons
+│   └── 📄 colors.py            # Theme colors
 ├── 📁 ui/
-│ ├── 📄 init.py
-│ ├── 📄 styles.py # TTK widget styles
-│ ├── 📄 winget_tab.py # Winget installer tab
-│ ├── 📄 choco_tab.py # Chocolatey installer tab
-│ ├── 📄 scripts_tab.py # PowerShell scripts tab
-│ ├── 📄 uninstall_tab.py # Uninstall & cleanup tab
-│ ├── 📄 logs_tab.py # Log analysis tab
-│ └── 📄 network_tab.py # Network debugging tab
+│   ├── 📄 __init__.py
+│   ├── 📄 styles.py            # TTK widget styles
+│   ├── 📄 winget_tab.py        # Winget installer tab
+│   ├── 📄 choco_tab.py         # Chocolatey installer tab
+│   ├── 📄 scripts_tab.py       # PowerShell scripts tab
+│   ├── 📄 uninstall_tab.py     # Uninstall & cleanup tab
+│   ├── 📄 logs_tab.py          # Log analysis tab
+│   └── 📄 network_tab.py       # Network debugging tab
 ├── 📁 utils/
-│ ├── 📄 init.py
-│ ├── 📄 admin.py # Admin privilege detection/elevation
-│ ├── 📄 powershell.py # PowerShell execution handler
-│ ├── 📄 winget.py # Winget manager class
-│ ├── 📄 logs.py # Log analysis utilities
-│ ├── 📄 network.py # Network diagnostics
-│ └── 📄 network_debug.py # Network debugging tools
-├── 📁 scripts/ # PowerShell scripts (auto-detected)
-│ ├── 📁 Admin Task/
-│ ├── 📁 Maintenance/
-│ ├── 📁 Network/
-│ ├── 📁 System Info/
-│ └── 📁 AD Scripts/
-├── 📁 build/ # PyInstaller temp (excluded from Git)
-├── 📁 dist/ # EXE output (excluded from Git)
-│ └── IT-Admin-Toolkit.exe
-├── 📄 main.py # Entry point
-├── 📄 app.py # Main application class
-├── 📄 icon.ico # App icon
-├── 📄 admin.manifest # UAC admin elevation manifest
-├── 📄 IT-Admin-Toolkit.spec # PyInstaller build config
-├── 📄 Build.ps1 # 🏗️ Build + Backup (RECOMMENDED)
-├── 📄 Backup.ps1 # Source backup only (keeps last 10)
+│   ├── 📄 __init__.py
+│   ├── 📄 admin.py             # Admin privilege detection/elevation
+│   ├── 📄 powershell.py        # PowerShell execution handler
+│   ├── 📄 winget.py            # Winget manager class
+│   ├── 📄 logs.py              # Log analysis utilities
+│   ├── 📄 network.py           # Network diagnostics
+│   └── 📄 network_debug.py     # Network debugging tools
+├── 📁 scripts/                 # PowerShell scripts (auto-detected)
+│   ├── 📁 Admin Task/
+│   ├── 📁 Maintenance/
+│   ├── 📁 Network/
+│   ├── 📁 System Info/
+│   └── 📁 AD Scripts/
+├── 📁 build/                   # PyInstaller temp (excluded from Git)
+├── 📁 dist/                    # EXE output (excluded from Git)
+│   └── IT-Admin-Toolkit.exe
+├── 📄 main.py                  # Entry point
+├── 📄 app.py                   # Main application class
+├── 📄 icon.ico                 # App icon
+├── 📄 admin.manifest           # UAC admin elevation manifest
+├── 📄 IT-Admin-Toolkit.spec    # PyInstaller build config
+├── 📄 Build.ps1               # 🏗️ Build + Backup (RECOMMENDED)
+├── 📄 Backup.ps1              # Source backup only (keeps last 10)
 └── 📄 README.md
+```
+
 --------------------------------------------------------------------------------
 🖥️ APPLICATION TABS
 --------------------------------------------------------------------------------
