@@ -5,16 +5,15 @@ IT Admin Toolkit v2.0 - COMPLETE DEPLOYMENT & MAINTENANCE GUIDE
 ------------
 
 Run: .\Build.ps1
-
+```plaintext
    ↳ Auto-backups source code + builds optimized EXE
    ↳ Keeps only last 10 backups
    ↳ Everything you need in ONE COMMAND
-
+```
 ## 📁 FOLDER STRUCTURE
 
 
 ```plaintext
-
 IT-Admin-Toolkit/
 
 ├── 📁 Backups/                 # Versioned backups (*.7z) - max 10 kept
@@ -67,7 +66,6 @@ IT-Admin-Toolkit/
 
 --------------------------------------------------------------------------------
 
-
 📦 WINGET TAB
 ```plaintext
    • Install applications via Windows Package Manager
@@ -102,7 +100,6 @@ IT-Admin-Toolkit/
 
 📊 LOG ANALYZER TAB
 ```plaintext
-
    • ESXi Log Analyzer - Extract and filter VMware logs
    • Generic Log Viewer - View any log file with filters
    • Windows Event Logs - Query System/Application/Security logs
@@ -110,12 +107,10 @@ IT-Admin-Toolkit/
    • Date range filtering with quick presets
    • Keyword and regex search
    • Export filtered results
-
 ```
 
 🌐 NETWORK DEBUG TAB
 ```plaintext
-
    • Ping - Test host reachability
    • Traceroute - Trace network path
    • NSLookup - DNS resolution
@@ -145,11 +140,8 @@ IT-Admin-Toolkit/
    2. Add to category:
 ```plaintext
       ("🌐 Browsers", [
-
           ("Google Chrome", "Google.Chrome"),
-
           ("Firefox", "Mozilla.Firefox"),  ← ADD HERE
-
       ]),
 ```
    3. Save & restart app
@@ -157,18 +149,13 @@ IT-Admin-Toolkit/
 ➕ NEW APPLICATIONS (Chocolatey)
 
    1. Open: config/choco_apps.py
-
    2. Add to category:
 ```plaintext
       ("🔧 Utilities", [
-
           ("7-Zip", "7zip"),
-
           ("Notepad++", "notepadplusplus"),  ← ADD HERE
-
       ]),
 ```
-
    3. Save & restart app
 
 ➕ NEW POWERSHELL SCRIPTS (Auto-detected)
@@ -176,15 +163,11 @@ IT-Admin-Toolkit/
    2. Add header:
 ```plaintext
       # NAME: 🚀 My Script Name
-
       # DESCRIPTION: What this does
-
       # STYLE: Dark.TButton
-
       # INTERACTIVE: false
 
       # Your PowerShell code here...
-
 ```
    3. Restart app - script auto-appears
 
@@ -194,15 +177,10 @@ IT-Admin-Toolkit/
    2. Add entry:
   ```plaintext
       (
-
           "🛡️ Button Name",
-
           "Get-Command | Format-List",  # PowerShell command
-
           "Description shown on hover",
-
           "Dark.TButton"  # or Warning.TButton, Danger.TButton
-
       ),
 
   ```
@@ -221,7 +199,6 @@ IT-Admin-Toolkit/
 ✅ RECOMMENDED:
 ```plaintext
    .\Build.ps1
-
    ↳ Backup + Optimized EXE + Cleanup + Keep last 10 backups
 ```
 
