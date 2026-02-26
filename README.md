@@ -189,10 +189,12 @@ IT-Admin-Toolkit/
 
    1. Open: config/scripts.py
 
-   2. Add entry:
+   2. Add entry:
 
   ```python
+
       (
+
           "🛡️ Button Name",
 
           "Get-Command | Format-List",  # PowerShell command
@@ -201,10 +203,12 @@ IT-Admin-Toolkit/
 
           "Dark.TButton"  # or Warning.TButton, Danger.TButton
 
-      ),
-  ```
-   3. Restart app
 
+      ),
+
+  ```
+
+   3. Restart app
 🎨 CUSTOM COLORS
 
    1. Edit: config/colors.py
