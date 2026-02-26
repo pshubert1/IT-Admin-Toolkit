@@ -62,11 +62,13 @@ IT-Admin-Toolkit/
 --------------------------------------------------------------------------------
 
 📦 WINGET TAB
+```plaintext
    • Install applications via Windows Package Manager
    • Search Winget repository
    • Bulk install selected apps
-
+```
 🍫 CHOCOLATEY TAB
+```plaintext
    • Install applications via Chocolatey
    • Search Choco repository
    • Install Chocolatey if not present
@@ -77,15 +79,19 @@ IT-Admin-Toolkit/
    • Auto-loads scripts from scripts/ folder
    • Custom script input with interactive mode
    • Network diagnostics button
+   ```
 
 🗑️ UNINSTALL & CLEANUP TAB
+```plaintext
    • Scan installed apps (Registry, Winget, Chocolatey)
    • Uninstall selected applications
    • Clean up leftover files, registry, AppData
    • Update selected or all apps
    • Export installed apps list
+```
 
 📊 LOG ANALYZER TAB
+```plaintext
    • ESXi Log Analyzer - Extract and filter VMware logs
    • Generic Log Viewer - View any log file with filters
    • Windows Event Logs - Query System/Application/Security logs
@@ -93,8 +99,9 @@ IT-Admin-Toolkit/
    • Date range filtering with quick presets
    • Keyword and regex search
    • Export filtered results
-
+```
 🌐 NETWORK DEBUG TAB
+```plaintext
    • Ping - Test host reachability
    • Traceroute - Trace network path
    • NSLookup - DNS resolution
@@ -110,7 +117,7 @@ IT-Admin-Toolkit/
    • ARP - View ARP cache
    • WiFi Info - Current WiFi details
    • WiFi Scan - Available networks
-
+```
 --------------------------------------------------------------------------------
 ➕ ADD NEW CONTENT
 --------------------------------------------------------------------------------
@@ -136,23 +143,31 @@ IT-Admin-Toolkit/
 ➕ NEW POWERSHELL SCRIPTS (Auto-detected)
    1. Create .ps1 file in: scripts/ or scripts/[Category]/
    2. Add header:
+   ```plaintext
+
       # NAME: 🚀 My Script Name
       # DESCRIPTION: What this does
       # STYLE: Dark.TButton
       # INTERACTIVE: false
       
       # Your PowerShell code here...
+
+   ```
    3. Restart app - script auto-appears
 
 ➕ NEW POWERSHELL SCRIPTS (Hardcoded)
    1. Open: config/scripts.py
    2. Add entry:
+
+   ```plaintext
       (
           "🛡️ Button Name",
           "Get-Command | Format-List",  # PowerShell command
           "Description shown on hover",
           "Dark.TButton"  # or Warning.TButton, Danger.TButton
       ),
+      ```
+
    3. Restart app
 
 🎨 CUSTOM COLORS
@@ -164,22 +179,19 @@ IT-Admin-Toolkit/
 --------------------------------------------------------------------------------
 
 ✅ RECOMMENDED:
+
+```plaintext
    .\Build.ps1
    ↳ Backup + Optimized EXE + Cleanup + Keep last 10 backups
-
+```
 📦 BUILD OPTIMIZATIONS (automatic):
+
+```plaintext
    • UPX compression (if upx.exe present)
    • Excluded unused modules
    • Admin manifest embedded
    • Strip debug symbols
-
-⬇️ OPTIONAL - Download UPX for smaller builds:
-   https://github.com/upx/upx/releases
-   Extract upx.exe to project folder
-
-📊 TYPICAL SIZES:
-   • Without UPX: ~25-35 MB
-   • With UPX:    ~10-15 MB
+```
 
 --------------------------------------------------------------------------------
 💾 BACKUP PROCESS
@@ -210,6 +222,7 @@ IT-Admin-Toolkit/
 --------------------------------------------------------------------------------
 🛡️ ADMIN PRIVILEGES
 --------------------------------------------------------------------------------
+```plaintext
 
 The app requests admin on launch (via manifest).
 
@@ -221,7 +234,7 @@ If not running as admin:
      - Renew IP
      - Some uninstall operations
      - Windows Event Log queries
-
+```
 --------------------------------------------------------------------------------
 📊 LOG ANALYZER FEATURES
 --------------------------------------------------------------------------------
@@ -259,14 +272,19 @@ If not running as admin:
 --------------------------------------------------------------------------------
 
 Target-based tools (uses IP/Hostname field):
+
+```plaintext
    🏓 Ping          - ICMP ping with statistics
    🔍 Traceroute    - Trace route to target
    🔎 NSLookup      - DNS resolution
    🔌 Port Check    - Test single port
    📡 Port Scan     - Scan common ports (21,22,80,443,etc)
    🌐 Whois         - Domain/IP information
+```
 
 System tools:
+
+```plaintext
    🌐 Internet Test - Quick connectivity check
    📋 IPConfig      - Full network configuration
    🧹 Flush DNS     - Clear DNS resolver cache
@@ -276,10 +294,13 @@ System tools:
    📋 ARP           - ARP cache table
    📶 WiFi Info     - Current WiFi connection details
    📡 WiFi Scan     - Available wireless networks
+```
 
 Output options:
+```plaintext
    🗑️ Clear         - Clear output window
    💾 Save          - Save output to file
+```
 
 --------------------------------------------------------------------------------
 🐛 TROUBLESHOOTING
