@@ -1,20 +1,35 @@
 IT Admin Toolkit v2.0 - COMPLETE DEPLOYMENT & MAINTENANCE GUIDE
 
+  
+
 🚀 QUICK START
+
+  
 
 ------------
 
+  
+
 Run: .\Build.ps1
+
 ```plaintext
+
    ↳ Auto-backups source code + builds optimized EXE
    ↳ Keeps only last 10 backups
    ↳ Everything you need in ONE COMMAND
+
 ```
+
 ## 📁 FOLDER STRUCTURE
 
+  
+  
 
 ```plaintext
+
 IT-Admin-Toolkit/
+
+  
 
 ├── 📁 Backups/                 # Versioned backups (*.7z) - max 10 kept
 ├── 📁 config/
@@ -22,6 +37,7 @@ IT-Admin-Toolkit/
 │   ├── 📄 winget.py            # Winget application definitions
 │   ├── 📄 choco_apps.py        # Chocolatey application definitions
 │   ├── 📄 script_loader.py     # Auto-loads .ps1 scripts from scripts folder
+
 │   ├── 📄 scripts.py           # Hardcoded PowerShell script buttons
 │   └── 📄 colors.py            # Theme colors
 ├── 📁 ui/
@@ -60,36 +76,35 @@ IT-Admin-Toolkit/
 ├── 📄 push.ps1                # 🚀 One-command Git push workflow
 └── 📄 README.md
 ```
-
 --------------------------------------------------------------------------------
 🖥️ APPLICATION TABS
-
 --------------------------------------------------------------------------------
-
 📦 WINGET TAB
+
 ```plaintext
+
    • Install applications via Windows Package Manager
    • Search Winget repository
    • Bulk install selected apps
 ```
-
 🍫 CHOCOLATEY TAB
+
 ```plaintext
    • Install applications via Chocolatey
    • Search Choco repository
    • Install Chocolatey if not present
    • Update all Choco packages
 ```
-
 ⚡ POWERSHELL SCRIPTS TAB
+
 ```plaintext
    • Run preset PowerShell scripts
    • Auto-loads scripts from scripts/ folder
    • Custom script input with interactive mode
    • Network diagnostics button
 ```
-
 🗑️ UNINSTALL & CLEANUP TAB
+
 ```plaintext
    • Scan installed apps (Registry, Winget, Chocolatey)
    • Uninstall selected applications
@@ -97,7 +112,6 @@ IT-Admin-Toolkit/
    • Update selected or all apps
    • Export installed apps list
 ```
-
 📊 LOG ANALYZER TAB
 ```plaintext
    • ESXi Log Analyzer - Extract and filter VMware logs
@@ -108,8 +122,8 @@ IT-Admin-Toolkit/
    • Keyword and regex search
    • Export filtered results
 ```
-
 🌐 NETWORK DEBUG TAB
+
 ```plaintext
    • Ping - Test host reachability
    • Traceroute - Trace network path
@@ -127,13 +141,9 @@ IT-Admin-Toolkit/
    • WiFi Info - Current WiFi details
    • WiFi Scan - Available networks
 ```
-
 --------------------------------------------------------------------------------
-
 ➕ ADD NEW CONTENT
-
 --------------------------------------------------------------------------------
-
 ➕ NEW APPLICATIONS (Winget)
 
    1. Open: config/winget.py
@@ -161,7 +171,6 @@ IT-Admin-Toolkit/
 ➕ NEW POWERSHELL SCRIPTS (Auto-detected)
 
    1. Create .ps1 file in: scripts/ or scripts/[Category]/
-
    2. Add header:
 ```plaintext
       # NAME: 🚀 My Script Name
@@ -184,16 +193,15 @@ IT-Admin-Toolkit/
           "Description shown on hover",
           "Dark.TButton"  # or Warning.TButton, Danger.TButton
       ),
-
   ```
    3. Restart app
 
 🎨 CUSTOM COLORS
+
    1. Edit: config/colors.py
    2. Modify COLORS dictionary
 
 --------------------------------------------------------------------------------
-
 🏗️ BUILD EXECUTABLE
 
 --------------------------------------------------------------------------------
@@ -205,7 +213,6 @@ IT-Admin-Toolkit/
 ```
 
 --------------------------------------------------------------------------------
-
 💾 BACKUP PROCESS
 
 --------------------------------------------------------------------------------
@@ -215,24 +222,20 @@ IT-Admin-Toolkit/
    main.py, app.py, config/, ui/, utils/, scripts/
    icon.ico, admin.manifest, Build.ps1, Backup.ps1, README.md
 ```
-
 ✅ VERSIONING:
 ```plaintext
    Format: "YY-MM-DD_HHMM.7z"
    Example: "25-02-26_1430.7z"
    Keeps: Last 10 backups only (older auto-deleted)
 ```
-
 ❌ EXCLUDED:
 ```plaintext
    __pycache__/  build/  dist/  venv/  .venv/  .git/
    *.pyc  *.exe  *.log  *.spec  *.tmp  Backups/
-``` 
-
+```
 --------------------------------------------------------------------------------
-
 🔄 UPDATE WORKFLOW
-
+  
 --------------------------------------------------------------------------------
 
 1. Make changes (winget.py, choco_apps.py, scripts/, colors.py, etc.)
@@ -242,14 +245,11 @@ IT-Admin-Toolkit/
 5. ✅ DONE
 
 --------------------------------------------------------------------------------
-
 🛡️ ADMIN PRIVILEGES
 
 --------------------------------------------------------------------------------
-
 ```plaintext
 The app requests admin on launch (via manifest).
-
 If not running as admin:
    • Yellow "Run as Admin" button appears
    • Click to relaunch with elevation
@@ -258,16 +258,14 @@ If not running as admin:
      - Renew IP
      - Some uninstall operations
      - Windows Event Log queries
-
 ```
 
 --------------------------------------------------------------------------------
-
 📊 LOG ANALYZER FEATURES
 
 --------------------------------------------------------------------------------
-
 🖥️ ESXi Log Analyzer
+
 ```plaintext
    • Extracts .tar/.tgz log bundles
    • Filters by date range
@@ -289,7 +287,7 @@ If not running as admin:
    • Case sensitive option
    • Save filtered results
 ```
-  
+
 🪟 Windows Event Logs
 ```plaintext
    • Query any Windows event log
@@ -300,7 +298,7 @@ If not running as admin:
    • Color-coded results
    • Export to file
 ```
-  
+
 --------------------------------------------------------------------------------
 
 🌐 NETWORK DEBUG FEATURES
@@ -341,30 +339,31 @@ Output options:
 🐛 TROUBLESHOOTING
 
 --------------------------------------------------------------------------------
+
 ```plaintext
 ❓ New scripts not showing?
-	   → Restart app (scripts load at startup)
+      → Restart app (scripts load at startup)
 ❓ PyInstaller fails?
-	   → Delete build/, dist/ folders
-	   → Run: .\Build.ps1
+      → Delete build/, dist/ folders
+      → Run: .\Build.ps1
 ❓ App won't run as admin?
-	   → Right-click EXE → Run as administrator
-	   → Check admin.manifest exists
+      → Right-click EXE → Run as administrator
+      → Check admin.manifest exists
 ❓ Uninstall scan empty?
-	   → Click "SCAN INSTALLED APPS" button
-	   → Requires admin for full results
+      → Click "SCAN INSTALLED APPS" button
+      → Requires admin for full results
 ❓ Python update issues?
-	   → pip install --upgrade pyinstaller
-	   → Delete build/, dist/, *.spec
-	   → Rebuild
+      → pip install --upgrade pyinstaller
+      → Delete build/, dist/, *.spec
+      → Rebuild
 ❓ Network tools not working?
-	   → Run app as administrator
-	   → Check Windows Firewall settings
+      → Run app as administrator
+      → Check Windows Firewall settings
 ❓ Log analyzer can't read file?
-	   → Check file encoding (UTF-8 recommended)
-	   → Try Generic Log Viewer for unknown formats
+      → Check file encoding (UTF-8 recommended)
+      → Try Generic Log Viewer for unknown formats
 ❓ Windows Events query slow?
-	   → Reduce time range (hours)
-	   → Add Event ID filter
-	   → Limit to specific log (System vs All)
+      → Reduce time range (hours)
+      → Add Event ID filter
+      → Limit to specific log (System vs All)
 ```
