@@ -191,8 +191,7 @@ IT-Admin-Toolkit/
 
    2. Add entry:
 
-   ```python
-
+  
       (
 
           "🛡️ Button Name",
@@ -206,7 +205,6 @@ IT-Admin-Toolkit/
 
       ),
 
-   ```
 
    3. Restart app
 🎨 CUSTOM COLORS
