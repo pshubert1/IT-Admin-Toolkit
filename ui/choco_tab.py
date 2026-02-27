@@ -181,24 +181,54 @@ class ChocoTab:
         threading.Thread(target=check, daemon=True).start()
     
     def _install_choco(self):
-        """Install Chocolatey."""
-        self.app.log("📥 Installing Chocolatey (opening PowerShell window)...")
+        """Install or repair Chocolatey (requires admin)."""
+        if not self.app.is_admin():
+            tk.messagebox.showwarning("Admin Required", "Please run the app as administrator to install/repair Chocolatey.")
+            self.app.log("❌ Admin required for Chocolatey install")
+            return
         
-        script = """Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Installing Chocolatey Package Manager" -ForegroundColor Cyan
+        self.app.log("📥 Installing/Repairing Chocolatey (opening PowerShell window)...")
+        
+        script = r"""Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Installing/Repairing Chocolatey" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "Setting execution policy..." -ForegroundColor Yellow
-Set-ExecutionPolicy Bypass -Scope Process -Force
+try {
+    # Check if Choco is installed and try to upgrade first
+    choco --version
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "🔄 Upgrading Chocolatey..." -ForegroundColor Yellow
+        choco upgrade chocolatey -y
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Chocolatey upgraded successfully" -ForegroundColor Green
+            exit 0
+        } else {
+            Write-Host "⚠️ Upgrade failed - proceeding to reinstall" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "⚠️ Chocolatey not found - proceeding to install" -ForegroundColor Yellow
+    }
 
-Write-Host "Configuring security protocol..." -ForegroundColor Yellow
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    # Clean old install
+    Write-Host "🧹 Removing old Chocolatey folder..." -ForegroundColor Yellow
+    Remove-Item -Recurse -Force "C:\ProgramData\chocolatey" -ErrorAction SilentlyContinue
 
-Write-Host "Downloading and installing Chocolatey..." -ForegroundColor Yellow
-Write-Host ""
-
-iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    # Install
+    Write-Host "📦 Installing Chocolatey..." -ForegroundColor Yellow
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "✅ Chocolatey installed successfully" -ForegroundColor Green
+        choco --version
+    } else {
+        Write-Host "❌ Chocolatey install failed" -ForegroundColor Red
+    }
+} catch {
+    Write-Host "❌ Error during install/repair: $_" -ForegroundColor Red
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
@@ -207,7 +237,7 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "You may need to restart this application to use Chocolatey." -ForegroundColor Yellow
 Write-Host ""
-choco --version"""
+"""
         
         self.app.powershell.run(script, "Install Chocolatey", interactive=True)
     
