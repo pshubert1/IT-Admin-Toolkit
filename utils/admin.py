@@ -5,7 +5,6 @@ Admin privilege utilities.
 import ctypes
 import sys
 import os
-import ctypes
 
 
 def is_admin():
@@ -15,11 +14,6 @@ def is_admin():
     except:
         return False
 
-def is_admin(self):
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except:
-        return False
 
 def run_as_admin(executable=None, parameters=None):
     """

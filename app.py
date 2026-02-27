@@ -20,6 +20,7 @@ from utils.winget import WingetManager
 from utils.admin import is_admin, restart_as_admin
 from ui.logs_tab import LogsTab
 from ui.network_tab import NetworkTab
+from ui.updates_tab import UpdatesTab 
 
 
 def resource_path(relative_path):
@@ -47,10 +48,10 @@ class AppInstaller:
             pass
         
         # Check admin status
-        self.is_admin = self.is_admin()
+        self.admin_status = self.is_admin()  # Store as boolean (renamed to avoid shadowing method)
         
         # Update title to show admin status
-        if self.is_admin:
+        if self.admin_status:
             self.root.title("IT Admin Toolkit [Administrator]")
         else:
             self.root.title("IT Admin Toolkit [Limited Mode]")
@@ -74,7 +75,7 @@ class AppInstaller:
         self.create_notebook()
         
         # Log startup
-        if self.is_admin:
+        if self.admin_status:
             self.log("🚀 GUI loaded successfully! (Running as Administrator)")
         else:
             self.log("🚀 GUI loaded (Limited Mode - Some features may not work)")
@@ -101,14 +102,14 @@ class AppInstaller:
         
         # Title with admin indicator
         title_text = "🛠️ IT Admin Toolkit"
-        if self.is_admin:
+        if self.admin_status:
             title_text += " 🛡️"
         
         title = ttk.Label(header_frame, text=title_text, style='Dark.Title.TLabel')
         title.pack(side=tk.LEFT)
         
         # Admin status indicator and button
-        if self.is_admin:
+        if self.admin_status:
             admin_label = ttk.Label(header_frame, text="✅ Administrator", 
                                    foreground='#4ec64b', background=self.colors['bg'],
                                    font=('Segoe UI', 9, 'bold'))
@@ -141,6 +142,7 @@ class AppInstaller:
         uninstall_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         logs_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         network_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
+        updates_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
 
         
         ###### Add tabs to notebook (Edit This when Adding new tab)
@@ -150,6 +152,7 @@ class AppInstaller:
         self.notebook.add(uninstall_frame, text='🗑️ Uninstall & Cleanup')
         self.notebook.add(logs_frame, text='📊 Logs')
         self.notebook.add(network_frame, text='🌐 Network')
+        self.notebook.add(updates_frame, text="🔄 Updates")
         
         ###### Build each tab (Edit This when Adding new tab)
         self.winget_tab = WingetTab(winget_frame, self)
@@ -158,6 +161,7 @@ class AppInstaller:
         self.uninstall_tab = UninstallTab(uninstall_frame, self)
         self.logs_tab = LogsTab(logs_frame, self)
         self.network_tab = NetworkTab(network_frame, self)
+        self.updates_tab = UpdatesTab(updates_frame, self)
         
         # Add notebook frame to paned window
         self.main_paned.add(notebook_frame, weight=3)
