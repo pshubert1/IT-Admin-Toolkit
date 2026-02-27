@@ -58,7 +58,8 @@ BUSINESS = [
     ("Adobe Reader", "Adobe.Acrobat.Reader.64-bit"),
     ("Zoom", "Zoom.Zoom"),
     ("Slack", "Slack.Slack"),
-    # ("Webex", "Cisco.Webex"),
+    ("Webex", "Cisco.Webex"),
+    ("Microsoft Copilot", "Microsoft.Copilot"),  # Standalone Copilot app
 ]
 
 EXTRAS = [

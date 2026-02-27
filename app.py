@@ -7,6 +7,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import sys
 import os
+import ctypes 
 
 from config.colors import COLORS
 from ui.styles import setup_styles
@@ -46,7 +47,7 @@ class AppInstaller:
             pass
         
         # Check admin status
-        self.is_admin = is_admin()
+        self.is_admin = self.is_admin()
         
         # Update title to show admin status
         if self.is_admin:
@@ -79,6 +80,13 @@ class AppInstaller:
             self.log("🚀 GUI loaded (Limited Mode - Some features may not work)")
             self.log("⚠️ Click 'Run as Admin' for full functionality")
     
+    def is_admin(self):
+        """Check if running as administrator."""
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        except Exception:
+            return False
+        
     def create_notebook(self):
         """Create the main tabbed interface."""
         # Main container

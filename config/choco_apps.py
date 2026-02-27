@@ -9,6 +9,9 @@ def get_choco_sections():
     Format: [(section_title, [(app_name, choco_id), ...]), ...]
     """
     return [
+        ("🤖 AI Tools", [
+            ("GitHub Copilot CLI", "github-copilot-cli"), 
+        ]),
         ("🌐 Browsers", [
             ("Google Chrome", "googlechrome"),
             ("Firefox", "firefox"),
