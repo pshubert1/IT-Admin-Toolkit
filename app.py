@@ -80,6 +80,12 @@ class AppInstaller:
         else:
             self.log("🚀 GUI loaded (Limited Mode - Some features may not work)")
             self.log("⚠️ Click 'Run as Admin' for full functionality")
+        
+        # Global mousewheel scrolling for all tabs (ADD THIS)
+        self.root.bind_all("<MouseWheel>", self._global_mousewheel)
+        self.root.bind_all("<Button-4>", self._global_mousewheel)
+        self.root.bind_all("<Button-5>", self._global_mousewheel)
+        
     
     def is_admin(self):
         """Check if running as administrator."""
@@ -87,6 +93,19 @@ class AppInstaller:
             return ctypes.windll.shell32.IsUserAnAdmin() != 0
         except Exception:
             return False
+        
+    def _global_mousewheel(self, event):
+        """Handle mousewheel scrolling for any canvas under the cursor."""
+        widget = event.widget
+        while widget:
+            if isinstance(widget, tk.Canvas):
+                if event.num == 5 or event.delta < 0:
+                    widget.yview_scroll(3, "units")
+                elif event.num == 4 or event.delta > 0:
+                    widget.yview_scroll(-3, "units")
+                return "break"
+            widget = widget.master
+        return None
         
     def create_notebook(self):
         """Create the main tabbed interface."""
