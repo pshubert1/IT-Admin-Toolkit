@@ -57,6 +57,10 @@ python -m pip install --upgrade pip 2>$null
 pip install pyinstaller 2>$null
 
 Write-Host ""
+Write-Host "🔄 Setting up Python virtual environment..." -ForegroundColor Cyan
+& "$PSScriptRoot\reset-venv.ps1"
+
+Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  Setup Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
