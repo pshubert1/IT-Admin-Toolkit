@@ -5,6 +5,7 @@ Network Debug Tab UI
 import tkinter as tk
 from tkinter import ttk
 import threading
+import subprocess
 
 from utils.network_debug import NetworkDebugger
 
@@ -131,6 +132,9 @@ class NetworkTab:
         ttk.Button(row3, text="💾 Save", style='Dark.TButton',
                   command=self._save_output).pack(side=tk.LEFT, padx=(0, 5))
         
+        ttk.Button(row3, text="🔍 Device Join Status", style='Dark.TButton',
+                  command=self._check_join_status).pack(side=tk.LEFT, padx=(0, 5))
+        
         # === ROW 2: OUTPUT AREA ===
         output_frame = ttk.LabelFrame(tab, text="📤 Output", 
                                      padding="10", style='Dark.TLabelframe')
@@ -155,7 +159,74 @@ class NetworkTab:
         
         # Initial message
         self.output_text.insert('1.0', "Enter a target IP or hostname above and select a tool.\n")
-    
+
+    def _check_join_status(self):
+        """Check domain, Azure AD, Hybrid join, and Intune enrollment status."""
+        self.app.log("🔍 Checking device join status...")
+        
+        def check():
+            try:
+                result = subprocess.run(['dsregcmd', '/status'],
+                                    capture_output=True, text=True, timeout=30,
+                                    creationflags=subprocess.CREATE_NO_WINDOW)
+                
+                if result.returncode != 0:
+                    self.app.root.after(0, lambda: self.app.log(f"❌ Failed to run dsregcmd: {result.stderr}"))
+                    return
+                
+                output = result.stdout
+                
+                # Parse key fields
+                checks = {
+                    'Domain Joined': self._parse_dsreg(output, 'AzureAdJoined') == 'NO' and self._parse_dsreg(output, 'DomainJoined') == 'YES',
+                    'Azure AD Joined': self._parse_dsreg(output, 'AzureAdJoined') == 'YES' and self._parse_dsreg(output, 'DomainJoined') == 'NO',
+                    'Hybrid Joined': self._parse_dsreg(output, 'AzureAdJoined') == 'YES' and self._parse_dsreg(output, 'DomainJoined') == 'YES',
+                    'Intune Enrolled': self._parse_dsreg(output, 'MdmUrl') != 'NONE',
+                }
+                
+                details = {
+                    'Domain Name': self._parse_dsreg(output, 'DomainName'),
+                    'Tenant Name': self._parse_dsreg(output, 'TenantName'),
+                    'Device ID': self._parse_dsreg(output, 'DeviceId'),
+                    'MDM URL': self._parse_dsreg(output, 'MdmUrl'),
+                }
+                
+                # Log results
+                self.app.root.after(0, lambda: self.app.log(""))
+                self.app.root.after(0, lambda: self.app.log("═══════════════════════════════════"))
+                self.app.root.after(0, lambda: self.app.log("       📋 DEVICE JOIN STATUS"))
+                self.app.root.after(0, lambda: self.app.log("═══════════════════════════════════"))
+                
+                for name, status in checks.items():
+                    icon = "✅" if status else "❌"
+                    self.app.root.after(0, lambda n=name, i=icon: self.app.log(f"  {i} {n}"))
+                
+                self.app.root.after(0, lambda: self.app.log("───────────────────────────────────"))
+                
+                for name, value in details.items():
+                    val = value if value != "NONE" else "N/A"
+                    self.app.root.after(0, lambda n=name, v=val: self.app.log(f"  📌 {n}: {v}"))
+                
+                self.app.root.after(0, lambda: self.app.log("═══════════════════════════════════"))
+                self.app.root.after(0, lambda: self.app.log(""))
+                
+            except Exception as e:
+                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+        
+        threading.Thread(target=check, daemon=True).start()
+
+    def _parse_dsreg(self, output, key):
+        """Parse a value from dsregcmd /status output."""
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith(f"{key}"):
+                parts = line.split(":", 1)
+                if len(parts) > 1:
+                    value = parts[1].strip()
+                    if value:
+                        return value
+        return "NONE"
+
     def _set_port(self, port):
         """Set port in entry."""
         self.port_entry.delete(0, tk.END)
