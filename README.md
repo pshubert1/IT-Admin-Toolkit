@@ -71,6 +71,7 @@ IT-Admin-Toolkit/
 ├── 📄 Build.ps1               # 🏗️ Build + Backup (RECOMMENDED)
 ├── 📄 Backup.ps1              # Source backup only (keeps last 10)
 ├── 📄 push.ps1                # 🚀 One-command Git push workflow
+├── 📄 .gitignore              # List of things to exclued from GitHub
 ├── 📄 requirements.py         # To find all add-ons that are needed
 ├── 📄 requirements.txt        # List add-ons that are needed
 ├── 📄 Setup_dev_environment.ps1   # Installs what is needed for this project
