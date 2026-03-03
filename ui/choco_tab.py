@@ -6,29 +6,54 @@ import tkinter as tk
 from tkinter import ttk
 import subprocess
 import threading
+import os
 
-# Import apps from config
 from config.choco_apps import get_choco_sections
 
 
 class ChocoTab:
     def __init__(self, parent, app):
-        """
-        Initialize the Chocolatey tab.
-        
-        Args:
-            parent: The parent notebook tab frame
-            app: Reference to main AppInstaller instance
-        """
         self.parent = parent
         self.app = app
         self.colors = app.colors
         self.checkboxes = {}
-        
-        # Get the app sections from config
         self.choco_sections = get_choco_sections()
+        self.choco_exe = self._find_choco()
         
         self.create_tab()
+    
+    def _find_choco(self):
+        """Find the choco.exe path."""
+        # Check common install location
+        default_path = r"C:\ProgramData\chocolatey\bin\choco.exe"
+        if os.path.exists(default_path):
+            return default_path
+        
+        # Check if it's in PATH
+        import shutil
+        found = shutil.which("choco")
+        if found:
+            return found
+        
+        return None
+    
+    def _refresh_choco_path(self):
+        """Refresh the choco.exe path (call after install)."""
+        self.choco_exe = self._find_choco()
+        if self.choco_exe:
+            self.app.log(f"✅ Chocolatey found at: {self.choco_exe}")
+        return self.choco_exe
+    
+    def _run_choco(self, args, **kwargs):
+        """Run a choco command with the correct path."""
+        if not self.choco_exe:
+            self._refresh_choco_path()
+        
+        if not self.choco_exe:
+            raise FileNotFoundError("Chocolatey not installed. Click 'INSTALL CHOCO' first.")
+        
+        cmd = [self.choco_exe] + args
+        return subprocess.run(cmd, **kwargs)
     
     def create_tab(self):
         """Create the Chocolatey tab content."""
@@ -41,7 +66,6 @@ class ChocoTab:
                                    padding="10", style='Dark.TLabelframe')
         info_frame.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
         
-        # Check Choco button and search
         btn_row = ttk.Frame(info_frame, style='Dark.TFrame')
         btn_row.pack(fill=tk.X, pady=(0, 10))
         
@@ -60,7 +84,6 @@ class ChocoTab:
         ttk.Button(btn_row, text="🔍 SEARCH", style='Dark.TButton',
                   command=self._search_choco).pack(side=tk.LEFT)
         
-        # Search results
         self.results_listbox = tk.Listbox(info_frame, height=3, bg=self.colors['bg'],
                                          fg=self.colors['fg'], font=('Consolas', 9),
                                          selectbackground=self.colors['accent'])
@@ -76,7 +99,6 @@ class ChocoTab:
         apps_outer_frame.columnconfigure(0, weight=1)
         apps_outer_frame.rowconfigure(0, weight=1)
         
-        # Create canvas with scrollbar
         self.apps_canvas = tk.Canvas(apps_outer_frame, bg=self.colors['frame_bg'], 
                                     highlightthickness=0)
         apps_scrollbar = ttk.Scrollbar(apps_outer_frame, orient=tk.VERTICAL, 
@@ -93,10 +115,6 @@ class ChocoTab:
         self.apps_canvas.configure(yscrollcommand=apps_scrollbar.set)
         self.apps_canvas.bind('<Configure>', self._on_canvas_configure)
         
-        # Mouse wheel scrolling
-        self.apps_canvas.bind("<MouseWheel>", self._on_mousewheel)
-        self.scrollable_frame.bind("<MouseWheel>", self._on_mousewheel)
-        
         self.apps_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         apps_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
@@ -106,7 +124,6 @@ class ChocoTab:
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
         
-        # Distribute categories between columns (from get_choco_sections list)
         mid_point = len(self.choco_sections) // 2 + 1
         left_sections = self.choco_sections[:mid_point]
         right_sections = self.choco_sections[mid_point:]
@@ -131,7 +148,6 @@ class ChocoTab:
         ttk.Button(btn_frame, text="📋 LIST INSTALLED", style='Dark.TButton',
                   command=self._list_installed).pack(side=tk.LEFT)
         
-        # Progress bar
         self.progress = ttk.Progressbar(tab, mode='indeterminate')
         self.progress.grid(row=3, column=0, sticky='ew', padx=5, pady=5)
     
@@ -149,15 +165,7 @@ class ChocoTab:
             self.checkboxes[app_name] = (var, choco_id)
     
     def _on_canvas_configure(self, event):
-        """Adjust the scrollable frame width when canvas is resized."""
         self.apps_canvas.itemconfig(self.canvas_window, width=event.width)
-    
-    def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling."""
-        if event.num == 5 or event.delta < 0:
-            self.apps_canvas.yview_scroll(1, "units")
-        elif event.num == 4 or event.delta > 0:
-            self.apps_canvas.yview_scroll(-1, "units")
     
     def _check_choco(self):
         """Check if Chocolatey is installed."""
@@ -165,14 +173,14 @@ class ChocoTab:
         
         def check():
             try:
-                result = subprocess.run(["choco", "--version"], 
-                                       capture_output=True, text=True, timeout=10,
-                                       creationflags=subprocess.CREATE_NO_WINDOW)
+                result = self._run_choco(["--version"], 
+                                        capture_output=True, text=True, timeout=10,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
                 if result.returncode == 0:
                     version = result.stdout.strip()
                     self.app.root.after(0, lambda: self.app.log(f"✅ Chocolatey v{version} installed"))
                 else:
-                    self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not found"))
+                    self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not working properly"))
             except FileNotFoundError:
                 self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' to install"))
             except Exception as e:
@@ -181,62 +189,79 @@ class ChocoTab:
         threading.Thread(target=check, daemon=True).start()
     
     def _install_choco(self):
-        """Install or repair Chocolatey (requires admin)."""
+        """Install or repair Chocolatey."""
         if not self.app.is_admin():
-            tk.messagebox.showwarning("Admin Required", "Please run the app as administrator to install/repair Chocolatey.")
+            tk.messagebox.showwarning("Admin Required", 
+                                     "Please run the app as administrator to install Chocolatey.")
             self.app.log("❌ Admin required for Chocolatey install")
             return
         
-        self.app.log("📥 Installing/Repairing Chocolatey (opening PowerShell window)...")
+        self.app.log("📥 Installing Chocolatey (opening PowerShell window)...")
         
-        script = r"""Write-Host "========================================" -ForegroundColor Cyan
+        # NOTE: No 'exit' commands — the powershell runner wraps in try/finally
+        script = r"""
+Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Installing/Repairing Chocolatey" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-try {
-    # Check if Choco is installed and try to upgrade first
-    choco --version
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "🔄 Upgrading Chocolatey..." -ForegroundColor Yellow
-        choco upgrade chocolatey -y
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "✅ Chocolatey upgraded successfully" -ForegroundColor Green
-            exit 0
-        } else {
-            Write-Host "⚠️ Upgrade failed - proceeding to reinstall" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "⚠️ Chocolatey not found - proceeding to install" -ForegroundColor Yellow
-    }
+# Set execution policy for this session
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 
-    # Clean old install
-    Write-Host "🧹 Removing old Chocolatey folder..." -ForegroundColor Yellow
-    Remove-Item -Recurse -Force "C:\ProgramData\chocolatey" -ErrorAction SilentlyContinue
-
-    # Install
-    Write-Host "📦 Installing Chocolatey..." -ForegroundColor Yellow
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+# Check if already installed
+$chocoPath = "C:\ProgramData\chocolatey\bin\choco.exe"
+if (Test-Path $chocoPath) {
+    Write-Host "🔄 Chocolatey found - checking version..." -ForegroundColor Yellow
+    & $chocoPath --version
+    Write-Host ""
     
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Chocolatey installed successfully" -ForegroundColor Green
-        choco --version
+    $choice = Read-Host "Chocolatey is already installed. Upgrade? (Y/N)"
+    if ($choice -eq 'Y' -or $choice -eq 'y') {
+        Write-Host "🔄 Upgrading Chocolatey..." -ForegroundColor Yellow
+        & $chocoPath upgrade chocolatey -y
+        Write-Host ""
+        Write-Host "✅ Chocolatey upgraded!" -ForegroundColor Green
     } else {
-        Write-Host "❌ Chocolatey install failed" -ForegroundColor Red
+        Write-Host "⏭️ Skipped upgrade" -ForegroundColor Gray
     }
-} catch {
-    Write-Host "❌ Error during install/repair: $_" -ForegroundColor Red
+} else {
+    Write-Host "📦 Chocolatey not found - Installing fresh..." -ForegroundColor Yellow
+    Write-Host ""
+    
+    # Clean any partial old install
+    if (Test-Path "C:\ProgramData\chocolatey") {
+        Write-Host "🧹 Removing old partial install..." -ForegroundColor Yellow
+        Remove-Item -Recurse -Force "C:\ProgramData\chocolatey" -ErrorAction SilentlyContinue
+    }
+    
+    # Download and run installer
+    Write-Host "📥 Downloading Chocolatey installer..." -ForegroundColor Yellow
+    $installScript = (New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')
+    Invoke-Expression $installScript
+    
+    # Verify installation
+    if (Test-Path "C:\ProgramData\chocolatey\bin\choco.exe") {
+        Write-Host ""
+        Write-Host "✅ Chocolatey installed successfully!" -ForegroundColor Green
+        & "C:\ProgramData\chocolatey\bin\choco.exe" --version
+    } else {
+        Write-Host ""
+        Write-Host "❌ Installation may have failed - choco.exe not found" -ForegroundColor Red
+    }
 }
 
+# Refresh environment path
+Write-Host ""
+Write-Host "🔄 Refreshing environment PATH..." -ForegroundColor Yellow
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Chocolatey Installation Complete!" -ForegroundColor Green
+Write-Host "  Chocolatey Setup Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "You may need to restart this application to use Chocolatey." -ForegroundColor Yellow
-Write-Host ""
+Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey features." -ForegroundColor Yellow
 """
         
         self.app.powershell.run(script, "Install Chocolatey", interactive=True)
@@ -253,16 +278,16 @@ Write-Host ""
         
         def search():
             try:
-                result = subprocess.run(["choco", "search", query, "--limit-output"],
-                                       capture_output=True, text=True, timeout=30,
-                                       creationflags=subprocess.CREATE_NO_WINDOW)
+                result = self._run_choco(["search", query, "--limit-output"],
+                                        capture_output=True, text=True, timeout=30,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
                 if result.returncode == 0:
                     lines = result.stdout.strip().split('\n')
                     self.app.root.after(0, lambda: self._populate_results(lines))
                 else:
                     self.app.root.after(0, lambda: self.app.log("❌ Search failed"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed"))
+                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' first"))
             except Exception as e:
                 self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
         
@@ -297,17 +322,16 @@ Write-Host ""
         def install():
             self.app.root.after(0, self.progress.start)
             try:
-                result = subprocess.run(["choco", "install", package_name, "-y"],
-                                       capture_output=True, text=True, timeout=600,
-                                       creationflags=subprocess.CREATE_NO_WINDOW)
+                result = self._run_choco(["install", package_name, "-y"],
+                                        capture_output=True, text=True, timeout=600,
+                                        creationflags=subprocess.CREATE_NO_WINDOW)
                 if result.returncode == 0:
                     self.app.root.after(0, lambda: self.app.log(f"✅ {package_name} installed"))
                 else:
-                    self.app.root.after(0, lambda: self.app.log(f"❌ {package_name} failed"))
-                    if self.app.debug_mode.get():
-                        self.app.root.after(0, lambda: self.app.debug_log(result.stderr))
+                    error = result.stderr.strip() or result.stdout.strip()
+                    self.app.root.after(0, lambda: self.app.log(f"❌ {package_name} failed: {error[:200]}"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed"))
+                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' first"))
             except Exception as e:
                 self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
             finally:
@@ -333,15 +357,16 @@ Write-Host ""
                 self.app.root.after(0, lambda n=app_name: self.app.log(f"📥 Installing {n}..."))
                 
                 try:
-                    result = subprocess.run(["choco", "install", choco_id, "-y"],
+                    result = self._run_choco(["install", choco_id, "-y"],
                                            capture_output=True, text=True, timeout=600,
                                            creationflags=subprocess.CREATE_NO_WINDOW)
                     if result.returncode == 0:
                         self.app.root.after(0, lambda n=app_name: self.app.log(f"✅ {n} installed"))
                     else:
-                        self.app.root.after(0, lambda n=app_name: self.app.log(f"❌ {n} failed"))
+                        error = result.stderr.strip() or result.stdout.strip()
+                        self.app.root.after(0, lambda n=app_name, e=error: self.app.log(f"❌ {n} failed: {e[:200]}"))
                 except FileNotFoundError:
-                    self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed"))
+                    self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' first"))
                     break
                 except Exception as e:
                     self.app.root.after(0, lambda n=app_name, err=str(e): self.app.log(f"❌ {n} error: {err}"))

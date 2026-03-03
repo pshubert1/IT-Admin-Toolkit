@@ -8,6 +8,7 @@ import threading
 import os
 import tempfile
 
+
 class PowerShellRunner:
     def __init__(self, app):
         self.app = app
@@ -21,24 +22,32 @@ class PowerShellRunner:
         self.app.log(f"⚡ Running: {name}")
         
         if interactive:
-            # Run in visible window for user interaction
             self._run_interactive(script, name)
         else:
-            # Run in background thread
             thread = threading.Thread(target=self._execute, args=(script, name), daemon=True)
             thread.start()
     
     def _run_interactive(self, script, name):
         """Run script in a visible PowerShell window for user input."""
         try:
-            # Create a temporary script file
             with tempfile.NamedTemporaryFile(mode='w', suffix='.ps1', delete=False, encoding='utf-8') as f:
-                # Add a pause at the end so user can see results
-                full_script = script + '\n\nWrite-Host ""\nWrite-Host "Press any key to close..." -ForegroundColor Cyan\n$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")'
+                # Wrap entire script in try/finally so window NEVER closes unexpectedly
+                full_script = (
+                    'try {\n'
+                    f'{script}\n'
+                    '} catch {\n'
+                    '    Write-Host ""\n'
+                    '    Write-Host "ERROR: $_" -ForegroundColor Red\n'
+                    '    Write-Host $_.ScriptStackTrace -ForegroundColor Gray\n'
+                    '} finally {\n'
+                    '    Write-Host ""\n'
+                    '    Write-Host "Press any key to close..." -ForegroundColor Cyan\n'
+                    '    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")\n'
+                    '}\n'
+                )
                 f.write(full_script)
                 temp_path = f.name
             
-            # Run in visible window
             cmd = [
                 self.ps_executable,
                 "-NoProfile",
@@ -46,18 +55,12 @@ class PowerShellRunner:
                 "-File", temp_path
             ]
             
-            # Start process with visible window
-            subprocess.Popen(
-                cmd,
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-            )
-            
+            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
             self.app.log(f"📺 Opened {name} in new window")
             
-            # Clean up temp file after a delay (in background)
             def cleanup():
                 import time
-                time.sleep(60)  # Wait 60 seconds before cleanup
+                time.sleep(120)
                 try:
                     os.remove(temp_path)
                 except:
