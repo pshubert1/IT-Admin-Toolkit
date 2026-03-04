@@ -261,6 +261,27 @@ Write-Host "   ✅ Build successful! ($([math]::Round($exeSize, 1)) MB)" -Foregr
 Write-Host "   📁 $ExePath" -ForegroundColor Gray
 Write-Host ""
 
+# ── Step 3b: Copy to Release Folder ──────────────────────
+Write-Host "📦 Step 3b: Copying to Release folder" -ForegroundColor Yellow
+
+$ReleaseDir = Join-Path $ProjectDir "release"
+if (-not (Test-Path $ReleaseDir)) {
+    New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
+}
+
+# Copy with version in filename
+$versionedExe = "IT-Admin-Toolkit-v$newVersion.exe"
+$releasePath = Join-Path $ReleaseDir $versionedExe
+Copy-Item -Path $ExePath -Destination $releasePath -Force
+
+# Also keep a "latest" copy for easy access
+$latestPath = Join-Path $ReleaseDir "IT-Admin-Toolkit-latest.exe"
+Copy-Item -Path $ExePath -Destination $latestPath -Force
+
+Write-Host "   ✅ Copied to: release\$versionedExe" -ForegroundColor Green
+Write-Host "   ✅ Updated:   release\IT-Admin-Toolkit-latest.exe" -ForegroundColor Green
+Write-Host ""
+
 # ── Step 4: Clean Build Artifacts ─────────────────────────
 Write-Host "🧹 Step 4: Cleanup" -ForegroundColor Yellow
 $specFile = Join-Path $ProjectDir "IT-Admin-Toolkit.spec"
@@ -362,7 +383,7 @@ if ($SkipRelease) {
         # Create release
         $releaseArgs = @(
             "release", "create", "v$newVersion"
-            $ExePath
+            $releasePath
             "--repo", "$RepoOwner/$RepoName"
             "--title", "v$newVersion"
             "--notes", $Notes
@@ -422,3 +443,4 @@ if (Test-Path $historyFile) {
 
 Write-Host "   📜 CHANGELOG.md updated" -ForegroundColor Gray
 Write-Host ""
+Write-Host "   EXE:      release\$versionedExe" -ForegroundColor White
