@@ -11,13 +11,6 @@ from utils.network import NetworkDiagnostics
 
 class ScriptsTab:
     def __init__(self, parent, app):
-        """
-        Initialize the scripts tab.
-        
-        Args:
-            parent: The parent notebook tab frame
-            app: Reference to main AppInstaller instance
-        """
         self.parent = parent
         self.app = app
         self.colors = app.colors
@@ -30,13 +23,11 @@ class ScriptsTab:
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(0, weight=1)
         
-        # Scrollable container for scripts
         scripts_outer = ttk.Frame(tab, style='DarkBg.TFrame')
         scripts_outer.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
         scripts_outer.columnconfigure(0, weight=1)
         scripts_outer.rowconfigure(0, weight=1)
         
-        # Canvas for scrolling
         self.scripts_canvas = tk.Canvas(scripts_outer, bg=self.colors['bg'], highlightthickness=0)
         scripts_scrollbar = ttk.Scrollbar(scripts_outer, orient=tk.VERTICAL, 
                                          command=self.scripts_canvas.yview)
@@ -53,15 +44,10 @@ class ScriptsTab:
         self.scripts_canvas.configure(yscrollcommand=scripts_scrollbar.set)
         self.scripts_canvas.bind('<Configure>', self._on_canvas_configure)
         
-        # Mouse wheel on canvas
-        self.scripts_canvas.bind("<MouseWheel>", self._on_mousewheel)
-        self.scripts_canvas.bind("<Button-4>", self._on_mousewheel)
-        self.scripts_canvas.bind("<Button-5>", self._on_mousewheel)
-        
         self.scripts_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scripts_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Build script sections from config
+        # Build script sections
         self._create_script_buttons()
         
         # Custom script section
@@ -70,15 +56,12 @@ class ScriptsTab:
         # Script output section
         self._create_output_section()
         
-        # Progress bar for scripts
+        # Progress bar
         self.script_progress = ttk.Progressbar(tab, mode='indeterminate')
         self.script_progress.grid(row=1, column=0, sticky='ew', padx=5, pady=5)
-        
-        # === BIND MOUSEWHEEL TO ALL CHILDREN ===
-        self._bind_mousewheel_to_all(self.scripts_scrollable)
     
     def _create_script_buttons(self):
-        """Create all the script section buttons from config."""
+        """Create all the script section buttons — merged built-in + folder scripts."""
         script_sections = get_script_sections()
         
         for section_title, scripts in script_sections:
@@ -87,7 +70,7 @@ class ScriptsTab:
             section_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
             
             for script_data in scripts:
-                # Handle both old format (4 items) and new format (5 items with interactive flag)
+                # Handle both 4-item and 5-item tuples
                 if len(script_data) == 5:
                     script_name, script_content, description, btn_style, interactive = script_data
                 else:
@@ -97,7 +80,6 @@ class ScriptsTab:
                 script_row = ttk.Frame(section_frame, style='Dark.TFrame')
                 script_row.pack(fill=tk.X, pady=4)
                 
-                # Add indicator for interactive scripts
                 display_name = f"📺 {script_name}" if interactive else script_name
                 
                 btn = ttk.Button(
@@ -109,7 +91,6 @@ class ScriptsTab:
                 )
                 btn.pack(side=tk.LEFT, padx=(0, 10))
                 
-                # Add description with interactive note
                 desc_text = f"{description} (opens in new window)" if interactive else description
                 desc_label = ttk.Label(script_row, text=desc_text, style='DarkFrame.TLabel',
                                       font=('Segoe UI', 9))
@@ -121,7 +102,6 @@ class ScriptsTab:
                                      padding="10", style='Dark.TLabelframe')
         custom_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
         
-        # Custom script text area
         self.custom_script_text = tk.Text(custom_frame, height=5, bg=self.colors['bg'], 
                                          fg='#00ff00', font=('Consolas', 10),
                                          insertbackground='white')
@@ -141,13 +121,10 @@ class ScriptsTab:
                   command=self._load_script_from_file).pack(side=tk.LEFT, padx=(0, 10))
         
         ttk.Button(custom_btn_frame, text="🗑️ CLEAR", style='Dark.TButton',
-                  command=lambda: self.custom_script_text.delete('1.0', tk.END)).pack(side=tk.LEFT)
-        ttk.Button(custom_btn_frame, text="🗑️ CLEAR", style='Dark.TButton',
-                  command=lambda: self.custom_script_text.delete('1.0', tk.END)).pack(side=tk.LEFT)
+                  command=lambda: self.custom_script_text.delete('1.0', tk.END)).pack(side=tk.LEFT, padx=(0, 10))
         
         ttk.Button(custom_btn_frame, text="🌐 Network Diag", style='Dark.TButton',
-                  command=self._run_network_diagnostic).pack(side=tk.LEFT, padx=(10, 0))
-        
+                  command=self._run_network_diagnostic).pack(side=tk.LEFT)
     
     def _create_output_section(self):
         """Create the script output display section."""
@@ -164,24 +141,7 @@ class ScriptsTab:
         output_scroll.pack(side=tk.RIGHT, fill=tk.Y)
     
     def _on_canvas_configure(self, event):
-        """Adjust the scrollable frame width when canvas is resized."""
         self.scripts_canvas.itemconfig(self.scripts_canvas_window, width=event.width)
-    
-    def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling."""
-        if event.num == 5 or event.delta < 0:
-            self.scripts_canvas.yview_scroll(1, "units")
-        elif event.num == 4 or event.delta > 0:
-            self.scripts_canvas.yview_scroll(-1, "units")
-    
-    def _bind_mousewheel_to_all(self, widget):
-        """Recursively bind mousewheel to widget and all its children."""
-        widget.bind("<MouseWheel>", self._on_mousewheel)
-        widget.bind("<Button-4>", self._on_mousewheel)
-        widget.bind("<Button-5>", self._on_mousewheel)
-        
-        for child in widget.winfo_children():
-            self._bind_mousewheel_to_all(child)
     
     def _run_custom_script(self):
         """Run the custom script from the text area (background mode)."""
@@ -200,8 +160,6 @@ class ScriptsTab:
         self.app.powershell.run(script, "Custom Script", interactive=True)
     
     def _load_script_from_file(self):
-        
-        
         """Load a PowerShell script from a file."""
         filetypes = [
             ("PowerShell Scripts", "*.ps1"),
@@ -211,7 +169,6 @@ class ScriptsTab:
         
         if filepath:
             try:
-                # Try different encodings
                 content = None
                 for encoding in ['utf-8-sig', 'utf-8', 'utf-16', 'latin-1']:
                     try:
@@ -224,14 +181,14 @@ class ScriptsTab:
                 if content:
                     self.custom_script_text.delete('1.0', tk.END)
                     self.custom_script_text.insert('1.0', content)
-                    self.app.log(f"📂 Loaded: {os.path.basename(filepath)}")
+                    self.app.log_success(f"Loaded: {os.path.basename(filepath)}")
                 else:
-                    self.app.log(f"💥 Could not read file (encoding issue)")
+                    self.app.log_error("Could not read file",
+                        hint="The file encoding is not supported")
                     
             except Exception as e:
-                self.app.log(f"💥 Failed to load file: {str(e)}")
-                
-                
+                self.app.log_error(f"Failed to load file: {str(e)}")
+    
     def _run_network_diagnostic(self):
         """Run network diagnostics in background."""
         import threading

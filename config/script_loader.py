@@ -10,7 +10,6 @@ import re
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller."""
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
@@ -48,7 +47,6 @@ def parse_script_metadata(filepath):
         
         metadata['content'] = content
         
-        # Parse metadata using regex
         name_match = re.search(r'^#\s*NAME\s*:\s*(.+)$', content, re.MULTILINE | re.IGNORECASE)
         if name_match:
             metadata['name'] = name_match.group(1).strip()
@@ -64,12 +62,10 @@ def parse_script_metadata(filepath):
             if style in valid_styles:
                 metadata['style'] = style
         
-        # Check for INTERACTIVE flag
         interactive_match = re.search(r'^#\s*INTERACTIVE\s*:\s*(true|yes|1)$', content, re.MULTILINE | re.IGNORECASE)
         if interactive_match:
             metadata['interactive'] = True
         
-        # Auto-detect if script uses Read-Host
         if re.search(r'\bRead-Host\b', content, re.IGNORECASE):
             metadata['interactive'] = True
         
@@ -94,7 +90,7 @@ def load_scripts_from_folder():
         print(f"Error reading scripts folder: {e}")
         return sections
     
-    # Root scripts
+    # Root-level scripts (not in a subfolder)
     root_scripts = []
     for item in items:
         item_path = os.path.join(scripts_folder, item)
@@ -116,6 +112,7 @@ def load_scripts_from_folder():
         item_path = os.path.join(scripts_folder, item)
         
         if os.path.isdir(item_path):
+            # Use raw folder name (no emoji prefix) for matching
             category_name = f"📁 {item}"
             category_scripts = []
             
