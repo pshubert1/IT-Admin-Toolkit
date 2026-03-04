@@ -16,61 +16,38 @@ def is_admin():
 
 
 def run_as_admin(executable=None, parameters=None):
-    """
-    Relaunch the current script/exe with admin privileges.
-    
-    Returns True if relaunch was initiated, False if failed or cancelled.
-    """
+    """Relaunch the current script/exe with admin privileges."""
     if executable is None:
         executable = sys.executable
-        
-        # If running as PyInstaller exe, use the exe path
-        if getattr(sys, 'frozen', False):
-            executable = sys.executable
-        else:
-            # Running as script, need to run python with the script
-            executable = sys.executable
-            if parameters is None:
-                parameters = ' '.join(sys.argv)
+        if parameters is None:
+            parameters = ' '.join(sys.argv)
     
     if parameters is None:
         parameters = ''
     
     try:
-        # ShellExecute with 'runas' verb to request elevation
         ret = ctypes.windll.shell32.ShellExecuteW(
-            None,           # hwnd
-            "runas",        # operation - 'runas' triggers UAC
-            executable,     # file
-            parameters,     # parameters
-            None,           # directory
-            1               # show command (SW_SHOWNORMAL)
+            None, "runas", executable, parameters, None, 1
         )
-        
-        # ShellExecute returns > 32 on success
         return ret > 32
-        
-    except Exception as e:
-        print(f"Failed to elevate: {e}")
+    except Exception:
         return False
 
 
 def restart_as_admin():
     """Restart the current application with admin privileges and exit."""
     if is_admin():
-        return False  # Already admin
+        return False
     
     if getattr(sys, 'frozen', False):
-        # Running as compiled exe
         executable = sys.executable
         parameters = ''
     else:
-        # Running as script
         executable = sys.executable
         parameters = '"' + '" "'.join(sys.argv) + '"'
     
     if run_as_admin(executable, parameters):
-        sys.exit(0)  # Exit current instance
+        sys.exit(0)
         return True
     
     return False

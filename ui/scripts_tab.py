@@ -187,7 +187,7 @@ class ScriptsTab:
         """Run the custom script from the text area (background mode)."""
         script = self.custom_script_text.get('1.0', tk.END).strip()
         if not script or script == '# Enter your PowerShell script here':
-            self.app.log("⚠️ Enter a script first!")
+            self.app.log_warning("Enter a script first")
             return
         self.app.powershell.run(script, "Custom Script", interactive=False)
     
@@ -195,7 +195,7 @@ class ScriptsTab:
         """Run the custom script in interactive mode (visible window)."""
         script = self.custom_script_text.get('1.0', tk.END).strip()
         if not script or script == '# Enter your PowerShell script here':
-            self.app.log("⚠️ Enter a script first!")
+            self.app.log_warning("Enter a script first")
             return
         self.app.powershell.run(script, "Custom Script", interactive=True)
     
@@ -237,7 +237,7 @@ class ScriptsTab:
         import threading
         
         def run():
-            diag = NetworkDiagnostics(self.app.log)
+            diag = NetworkDiagnostics(app=self.app)
             diag.run_all(save_report=True)
         
         threading.Thread(target=run, daemon=True).start()

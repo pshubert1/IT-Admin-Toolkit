@@ -15,7 +15,7 @@ class NetworkTab:
         self.parent = parent
         self.app = app
         self.colors = app.colors
-        self.debugger = NetworkDebugger(app.log)
+        self.debugger = NetworkDebugger(app=app)
         
         self.create_tab()
     
@@ -171,7 +171,7 @@ class NetworkTab:
                                     creationflags=subprocess.CREATE_NO_WINDOW)
                 
                 if result.returncode != 0:
-                    self.app.root.after(0, lambda: self.app.log(f"❌ Failed to run dsregcmd: {result.stderr}"))
+                    self.app.root.after(0, lambda: self.app.log_error("Failed to run dsregcmd", hint="Run as Administrator"))
                     return
                 
                 output = result.stdout
@@ -211,7 +211,7 @@ class NetworkTab:
                 self.app.root.after(0, lambda: self.app.log(""))
                 
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda: self.app.log_error(str(e)))
         
         threading.Thread(target=check, daemon=True).start()
 
@@ -275,7 +275,7 @@ class NetworkTab:
         """Run ping."""
         target = self._get_target()
         if not target:
-            self.app.log("⚠️ Enter a target first")
+            self.app.log_warning("Enter a target first")
             return
         
         def run():
@@ -288,7 +288,7 @@ class NetworkTab:
         """Run traceroute."""
         target = self._get_target()
         if not target:
-            self.app.log("⚠️ Enter a target first")
+            self.app.log_warning("Enter a target first")
             return
         
         def run():
@@ -302,7 +302,7 @@ class NetworkTab:
         """Run nslookup."""
         target = self._get_target()
         if not target:
-            self.app.log("⚠️ Enter a target first")
+            self.app.log_warning("Enter a target first")
             return
         
         def run():
@@ -316,7 +316,7 @@ class NetworkTab:
         target = self._get_target()
         port = self._get_port()
         if not target:
-            self.app.log("⚠️ Enter a target first")
+            self.app.log_warning("Enter a target first")
             return
         
         def run():
@@ -329,7 +329,7 @@ class NetworkTab:
         """Scan common ports."""
         target = self._get_target()
         if not target:
-            self.app.log("⚠️ Enter a target first")
+            self.app.log_warning("Enter a target first")
             return
         
         def run():
@@ -343,7 +343,7 @@ class NetworkTab:
         """Get whois info."""
         target = self._get_target()
         if not target:
-            self.app.log("⚠️ Enter a target first")
+            self.app.log_warning("Enter a target first")
             return
         
         def run():
@@ -436,7 +436,7 @@ class NetworkTab:
         
         content = self.output_text.get('1.0', tk.END)
         if not content.strip():
-            self.app.log("⚠️ No output to save")
+            sself.app.log_warning("No output to save")
             return
         
         filepath = filedialog.asksaveasfilename(
@@ -450,6 +450,6 @@ class NetworkTab:
             try:
                 with open(filepath, 'w', encoding='utf-8') as f:
                     f.write(content)
-                self.app.log(f"💾 Saved to: {filepath}")
+                self.app.log_success(f"Saved to: {filepath}")
             except Exception as e:
-                self.app.log(f"❌ Save failed: {e}")
+                 self.app.log_error(f"Save failed: {e}")

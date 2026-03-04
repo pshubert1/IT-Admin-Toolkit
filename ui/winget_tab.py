@@ -175,7 +175,7 @@ class WingetTab:
     
     def _install_custom(self):
         if not self.custom_result:
-            self.app.log("⚠️ Select a search result first!")
+            self.app.log_warning("Select a search result first")
             return
         
         self.app.log(f"🚀 Adding custom app: {self.custom_result}")
@@ -186,7 +186,7 @@ class WingetTab:
     def _start_install(self):
         selected = [name for name, (var, _) in self.checkboxes.items() if var.get()]
         if not selected:
-            self.app.log("⚠️ Select at least one app!")
+            self.app.log_warning("Select at least one app")
             return
         
         self.app.winget.install_apps(selected, self.checkboxes, self.install_btn, self.progress)

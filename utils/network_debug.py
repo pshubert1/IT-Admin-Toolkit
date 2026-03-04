@@ -4,18 +4,37 @@ Network Debugging Utilities
 
 import subprocess
 import socket
-import re
-from datetime import datetime
 
 
 class NetworkDebugger:
     """Network debugging tools."""
     
-    def __init__(self, log_callback=None):
-        self.log = log_callback or print
+    def __init__(self, app=None, log_callback=None):
+        self.app = app
+        self._log = log_callback or (app.log if app else print)
+    
+    def log(self, msg):
+        self._log(msg)
+    
+    def log_error(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_error'):
+            self.app.log_error(msg, hint)
+        else:
+            self._log(f"❌ {msg}")
+    
+    def log_warning(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_warning'):
+            self.app.log_warning(msg, hint)
+        else:
+            self._log(f"⚠️ {msg}")
+    
+    def log_success(self, msg):
+        if self.app and hasattr(self.app, 'log_success'):
+            self.app.log_success(msg)
+        else:
+            self._log(f"✅ {msg}")
     
     def _run_command(self, cmd, timeout=30):
-        """Run a command and return output."""
         try:
             result = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=timeout,
@@ -28,49 +47,44 @@ class NetworkDebugger:
             return str(e), False
     
     def ping(self, target, count=4):
-        """Ping a target."""
         self.log(f"🏓 Pinging {target} ({count} packets)...")
-        
         output, success = self._run_command(["ping", "-n", str(count), target])
         
-        # Parse results
         if success:
-            # Extract statistics
             if "Average" in output:
                 for line in output.split('\n'):
                     if "Minimum" in line or "Average" in line:
                         self.log(f"   {line.strip()}")
-                self.log("✅ Ping successful")
+                self.log_success("Ping successful")
             elif "Request timed out" in output:
-                self.log("⚠️ Request timed out")
+                self.log_warning("Request timed out")
             elif "could not find host" in output.lower():
-                self.log("❌ Could not resolve hostname")
+                self.log_error("Could not resolve hostname",
+                    hint="Check the hostname spelling or DNS settings")
         else:
-            self.log("❌ Ping failed")
+            self.log_error("Ping failed",
+                hint="Check network connection and target address")
         
         return output, success
     
     def traceroute(self, target, max_hops=30):
-        """Traceroute to target."""
         self.log(f"🔍 Tracing route to {target} (max {max_hops} hops)...")
         self.log("   This may take a moment...")
         
         output, success = self._run_command(
-            ["tracert", "-h", str(max_hops), target], 
-            timeout=120
+            ["tracert", "-h", str(max_hops), target], timeout=120
         )
         
         if success:
-            self.log("✅ Traceroute complete")
+            self.log_success("Traceroute complete")
         else:
-            self.log("❌ Traceroute failed")
+            self.log_error("Traceroute failed",
+                hint="Target may be unreachable or blocking ICMP")
         
         return output, success
     
     def nslookup(self, target, dns_server=None):
-        """DNS lookup."""
         self.log(f"🔎 Looking up {target}...")
-        
         cmd = ["nslookup", target]
         if dns_server:
             cmd.append(dns_server)
@@ -78,14 +92,14 @@ class NetworkDebugger:
         output, success = self._run_command(cmd)
         
         if success:
-            self.log("✅ DNS lookup complete")
+            self.log_success("DNS lookup complete")
         else:
-            self.log("❌ DNS lookup failed")
+            self.log_error("DNS lookup failed",
+                hint="Check DNS settings or try a different DNS server")
         
         return output, success
     
     def port_check(self, target, port, timeout=5):
-        """Check if a port is open."""
         self.log(f"🔌 Checking {target}:{port}...")
         
         try:
@@ -95,20 +109,21 @@ class NetworkDebugger:
             sock.close()
             
             if result == 0:
-                self.log(f"✅ Port {port} is OPEN")
+                self.log_success(f"Port {port} is OPEN")
                 return f"Port {port} is OPEN on {target}", True
             else:
-                self.log(f"❌ Port {port} is CLOSED/FILTERED")
+                self.log_error(f"Port {port} is CLOSED/FILTERED",
+                    hint="A firewall may be blocking this port")
                 return f"Port {port} is CLOSED/FILTERED on {target}", False
         except socket.gaierror:
-            self.log(f"❌ Could not resolve {target}")
+            self.log_error(f"Could not resolve {target}",
+                hint="Check the hostname spelling")
             return f"Could not resolve hostname: {target}", False
         except Exception as e:
-            self.log(f"❌ Error: {e}")
+            self.log_error(f"Port check error: {e}")
             return str(e), False
     
     def port_scan(self, target, ports=None):
-        """Scan common ports."""
         if ports is None:
             ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3389, 8080]
         
@@ -133,29 +148,27 @@ class NetworkDebugger:
             except:
                 results.append(f"Port {port}: ERROR")
         
-        self.log(f"✅ Scan complete: {len(open_ports)} open ports found")
+        self.log_success(f"Scan complete: {len(open_ports)} open ports found")
         return "\n".join(results), True
     
     def get_ip_config(self):
-        """Get IP configuration."""
         self.log("📋 Getting IP configuration...")
         output, success = self._run_command(["ipconfig", "/all"])
         return output, success
     
     def flush_dns(self):
-        """Flush DNS cache."""
         self.log("🧹 Flushing DNS cache...")
         output, success = self._run_command(["ipconfig", "/flushdns"])
         
         if success:
-            self.log("✅ DNS cache flushed")
+            self.log_success("DNS cache flushed")
         else:
-            self.log("❌ Failed to flush DNS (need admin?)")
+            self.log_error("Failed to flush DNS",
+                hint="Run the app as Administrator")
         
         return output, success
     
     def release_renew_ip(self):
-        """Release and renew IP address."""
         self.log("🔄 Releasing IP address...")
         output1, _ = self._run_command(["ipconfig", "/release"])
         
@@ -163,50 +176,40 @@ class NetworkDebugger:
         output2, success = self._run_command(["ipconfig", "/renew"], timeout=60)
         
         if success:
-            self.log("✅ IP renewed successfully")
+            self.log_success("IP renewed successfully")
         else:
-            self.log("⚠️ IP renewal may have issues")
+            self.log_warning("IP renewal may have issues",
+                hint="Check if DHCP server is reachable")
         
         return output1 + "\n" + output2, success
     
     def get_arp_table(self):
-        """Get ARP table."""
         self.log("📋 Getting ARP table...")
-        output, success = self._run_command(["arp", "-a"])
-        return output, success
+        return self._run_command(["arp", "-a"])
     
     def get_netstat(self, show_all=False):
-        """Get network connections."""
         self.log("📋 Getting network connections...")
-        
         cmd = ["netstat", "-ano"]
         if show_all:
             cmd = ["netstat", "-ano", "-p", "tcp"]
-        
-        output, success = self._run_command(cmd)
-        return output, success
+        return self._run_command(cmd)
     
     def get_route_table(self):
-        """Get routing table."""
         self.log("📋 Getting routing table...")
-        output, success = self._run_command(["route", "print"])
-        return output, success
+        return self._run_command(["route", "print"])
     
     def whois(self, target):
-        """Basic whois-like info using nslookup."""
         self.log(f"🔎 Getting info for {target}...")
-        
         results = []
         
-        # Get IP
         try:
             ip = socket.gethostbyname(target)
             results.append(f"IP Address: {ip}")
             self.log(f"   IP: {ip}")
         except:
             results.append(f"Could not resolve: {target}")
+            self.log_error(f"Could not resolve: {target}")
         
-        # Get reverse DNS
         try:
             hostname = socket.gethostbyaddr(ip)[0]
             results.append(f"Hostname: {hostname}")
@@ -214,14 +217,12 @@ class NetworkDebugger:
         except:
             results.append("Reverse DNS: Not available")
         
-        # Get DNS records
         output, _ = self._run_command(["nslookup", "-type=any", target])
         results.append("\nDNS Records:\n" + output)
         
         return "\n".join(results), True
     
     def test_internet(self):
-        """Quick internet connectivity test."""
         self.log("🌐 Testing internet connectivity...")
         
         tests = [
@@ -236,11 +237,7 @@ class NetworkDebugger:
         for name, test in tests:
             try:
                 result = test()
-                if isinstance(result, tuple):
-                    success = result[1]
-                else:
-                    success = True
-                
+                success = result[1] if isinstance(result, tuple) else True
                 status = "✅ PASS" if success else "❌ FAIL"
                 results.append(f"{name}: {status}")
                 
@@ -255,24 +252,17 @@ class NetworkDebugger:
                 all_passed = False
         
         if all_passed:
-            self.log("✅ Internet connectivity: OK")
+            self.log_success("Internet connectivity: OK")
         else:
-            self.log("⚠️ Internet connectivity: Issues detected")
+            self.log_warning("Internet connectivity: Issues detected",
+                hint="Check network adapter and router")
         
         return "\n".join(results), all_passed
     
     def get_wifi_info(self):
-        """Get WiFi information."""
         self.log("📶 Getting WiFi information...")
-        output, success = self._run_command(
-            ["netsh", "wlan", "show", "interfaces"]
-        )
-        return output, success
+        return self._run_command(["netsh", "wlan", "show", "interfaces"])
     
     def get_wifi_networks(self):
-        """Get available WiFi networks."""
         self.log("📶 Scanning WiFi networks...")
-        output, success = self._run_command(
-            ["netsh", "wlan", "show", "networks", "mode=bssid"]
-        )
-        return output, success
+        return self._run_command(["netsh", "wlan", "show", "networks", "mode=bssid"])

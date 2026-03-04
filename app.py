@@ -7,20 +7,21 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import sys
 import os
-import ctypes 
+import ctypes
+import time
 
 from config.colors import COLORS
 from ui.styles import setup_styles
 from ui.winget_tab import WingetTab
 from ui.scripts_tab import ScriptsTab
-from ui.choco_tab import ChocoTab  # ADD THIS IMPORT
+from ui.choco_tab import ChocoTab
 from utils.powershell import PowerShellRunner
 from ui.uninstall_tab import UninstallTab
 from utils.winget import WingetManager
 from utils.admin import is_admin, restart_as_admin
 from ui.logs_tab import LogsTab
 from ui.network_tab import NetworkTab
-from ui.updates_tab import UpdatesTab 
+from ui.updates_tab import UpdatesTab
 
 
 def resource_path(relative_path):
@@ -48,7 +49,7 @@ class AppInstaller:
             pass
         
         # Check admin status
-        self.admin_status = self.is_admin()  # Store as boolean (renamed to avoid shadowing method)
+        self.admin_status = self.is_admin()
         
         # Update title to show admin status
         if self.admin_status:
@@ -81,11 +82,10 @@ class AppInstaller:
             self.log("🚀 GUI loaded (Limited Mode - Some features may not work)")
             self.log("⚠️ Click 'Run as Admin' for full functionality")
         
-        # Global mousewheel scrolling for all tabs (ADD THIS)
+        # Global mousewheel scrolling for all tabs
         self.root.bind_all("<MouseWheel>", self._global_mousewheel)
         self.root.bind_all("<Button-4>", self._global_mousewheel)
         self.root.bind_all("<Button-5>", self._global_mousewheel)
-        
     
     def is_admin(self):
         """Check if running as administrator."""
@@ -93,7 +93,7 @@ class AppInstaller:
             return ctypes.windll.shell32.IsUserAnAdmin() != 0
         except Exception:
             return False
-        
+    
     def _global_mousewheel(self, event):
         """Handle mousewheel scrolling for any canvas under the cursor."""
         widget = event.widget
@@ -106,7 +106,7 @@ class AppInstaller:
                 return "break"
             widget = widget.master
         return None
-        
+    
     def create_notebook(self):
         """Create the main tabbed interface."""
         # Main container
@@ -154,33 +154,35 @@ class AppInstaller:
         self.notebook = ttk.Notebook(notebook_frame, style='Dark.TNotebook')
         self.notebook.pack(fill=tk.BOTH, expand=True)
         
-        ###### Create tab frames (Edit This when Adding new tab)
+        # Create tab frames
         winget_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         scripts_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
-        choco_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')  # ADD THIS
+        choco_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         uninstall_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         logs_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         network_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
         updates_frame = ttk.Frame(self.notebook, style='DarkBg.TFrame')
-
         
-        ###### Add tabs to notebook (Edit This when Adding new tab)
+        # Add tabs to notebook
         self.notebook.add(winget_frame, text='📦 Winget')
-        self.notebook.add(choco_frame, text='🍫 Chocolatey')  # ADD THIS
+        self.notebook.add(choco_frame, text='🍫 Chocolatey')
         self.notebook.add(scripts_frame, text='⚡ PowerShell Scripts')
         self.notebook.add(uninstall_frame, text='🗑️ Uninstall & Cleanup')
         self.notebook.add(logs_frame, text='📊 Logs')
         self.notebook.add(network_frame, text='🌐 Network')
         self.notebook.add(updates_frame, text="🔄 Updates")
         
-        ###### Build each tab (Edit This when Adding new tab)
+        # Build each tab
         self.winget_tab = WingetTab(winget_frame, self)
-        self.choco_tab = ChocoTab(choco_frame, self)  # ADD THIS
+        self.choco_tab = ChocoTab(choco_frame, self)
         self.scripts_tab = ScriptsTab(scripts_frame, self)
         self.uninstall_tab = UninstallTab(uninstall_frame, self)
         self.logs_tab = LogsTab(logs_frame, self)
         self.network_tab = NetworkTab(network_frame, self)
         self.updates_tab = UpdatesTab(updates_frame, self)
+        
+        # Also store as installer_tab for WingetManager compatibility
+        self.installer_tab = self.winget_tab
         
         # Add notebook frame to paned window
         self.main_paned.add(notebook_frame, weight=3)
@@ -229,6 +231,26 @@ class AppInstaller:
                                   padding="5", style='Dark.TLabelframe')
         log_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Button row inside the log frame
+        log_btn_frame = ttk.Frame(log_frame, style='Dark.TFrame')
+        log_btn_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Button(log_btn_frame, text="🗑️ Clear Log", style='Dark.TButton',
+                  command=self._clear_activity_log).pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Test button - only visible in debug mode
+        self.test_log_btn = ttk.Button(log_btn_frame, text="🧪 TEST LOGS", style='Dark.TButton',
+                                       command=self.run_log_tests)
+        
+        def toggle_test_btn(*args):
+            if self.debug_mode.get():
+                self.test_log_btn.pack(side=tk.LEFT, padx=(0, 5))
+            else:
+                self.test_log_btn.pack_forget()
+        
+        self.debug_mode.trace_add('write', toggle_test_btn)
+        
+        # Activity log text widget
         self.log_text = tk.Text(log_frame, height=4, bg=self.colors['bg'], fg=self.colors['fg'], 
                                font=('Consolas', 9), state=tk.NORMAL, wrap=tk.WORD)
         log_scroll = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.log_text.yview)
@@ -237,6 +259,10 @@ class AppInstaller:
         log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
         parent_paned.add(logs_container, weight=1)
+    
+    def _clear_activity_log(self):
+        """Clear the activity log."""
+        self.log_text.delete('1.0', tk.END)
     
     def toggle_debug_output(self, *args):
         """Show/hide debug output based on checkbox state."""
@@ -253,9 +279,166 @@ class AppInstaller:
             self.debug_text.see(tk.END)
             self.root.update_idletasks()
     
+    # ==========================================
+    # Centralized Logging Methods
+    # ==========================================
+    
     def log(self, message):
         """Log a message to the activity log."""
-        timestamp = datetime.now().strftime("%H:%M:%S")
+        timestamp = time.strftime("%H:%M:%S")
         self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
         self.log_text.see(tk.END)
-        self.root.update()
+    
+    def log_error(self, message, hint=None):
+        """Log an error with standardized formatting."""
+        self.log(f"❌🖕 {message}")
+        if hint:
+            self.log(f"   💡 {hint}")
+        if not self.debug_mode.get():
+            self.log(f"   🔧 Enable Debug Mode for more details")
+    
+    def log_warning(self, message, hint=None):
+        """Log a warning with standardized formatting."""
+        self.log(f"⚠️ 💩 {message}")
+        if hint:
+            self.log(f"   💡 {hint}")
+    
+    def log_success(self, message):
+        """Log a success message."""
+        self.log(f"✅ {message}")
+    
+    # ==========================================
+    # Test Method
+    # ==========================================
+    
+    def run_log_tests(self):
+        """Test all centralized logging methods."""
+        import threading
+        
+        def _test():
+            tests = [
+                ("SECTION", "=== Testing Log Types ==="),
+                ("log", "📋 This is a normal log message"),
+                ("success", "This is a success message"),
+                ("warning", ("This is a warning with no hint", None)),
+                ("warning", ("This is a warning WITH a hint", "This is the hint text")),
+                ("error", ("This is an error with no hint", None)),
+                ("error", ("This is an error WITH a hint", "This is the hint text")),
+                
+                ("SECTION", "=== Winget Error Codes ==="),
+                ("error", ("Chrome - not found in repository", "Verify winget ID: Google.Chrome.Invalid")),
+                ("error", ("Process Explorer - no installer for this system", "ID 'Microsoft.Sysinternals.ProcessExplorer' may not support this OS/architecture")),
+                ("success", "Firefox already installed"),
+                ("log", "⬆️ 7-Zip - already installed, newer version available"),
+                ("error", ("VSCode - download failed", "Check internet connection")),
+                ("error", ("Notepad++ failed (code 2316632084)", "Try installing with Chocolatey instead")),
+                ("warning", ("Teams - silent failed (code 1), retrying...", None)),
+                ("error", ("Teams - all install methods failed", "Try installing with Chocolatey instead")),
+                ("success", "Teams installed"),
+                ("success", "Chrome installed (reboot needed)"),
+                ("error", ("winget not found", "Install 'App Installer' from Microsoft Store")),
+                ("error", ("Chrome timed out after 300s", "Try installing manually or check internet speed")),
+                
+                ("SECTION", "=== Chocolatey Errors ==="),
+                ("error", ("Chocolatey not installed", "Click 'INSTALL CHOCO' first")),
+                ("error", ("Choco check failed: timeout", None)),
+                ("error", ("Admin required for Chocolatey install", "Click 'Run as Admin' in the toolbar")),
+                ("error", ("git install failed", "Run as admin or check internet")),
+                ("success", "Chocolatey v2.4.0 installed"),
+                ("success", "git installed"),
+                ("warning", ("Enter a search term", None)),
+                ("success", "Found 15 packages"),
+                
+                ("SECTION", "=== PowerShell Errors ==="),
+                ("error", ("PowerShell not found", "Verify PowerShell is installed at C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\")),
+                ("error", ("Permission denied launching Repair Script", "Try running the app as Administrator")),
+                ("error", ("Failed to launch Update Script: [WinError 740]", None)),
+                ("success", "Opened Defender Repair in new window"),
+                ("success", "Network Diagnostics completed"),
+                ("warning", ("Network Diagnostics completed with exit code: 1", "Check script output for details")),
+                ("error", ("SFC Scan timed out after 600s", "The script may still be running in the background")),
+                
+                ("SECTION", "=== Network Errors ==="),
+                ("error", ("No active network adapters", "Check if WiFi or Ethernet is enabled")),
+                ("error", ("Gateway unreachable", "Check physical network connection")),
+                ("error", ("No gateway configured", "Check network adapter settings or DHCP")),
+                ("error", ("google.com - DNS resolution FAILED", "Try flushing DNS: ipconfig /flushdns")),
+                ("error", ("Port 443 is CLOSED/FILTERED", "A firewall may be blocking this port")),
+                ("error", ("Could not resolve server.local", "Check the hostname spelling")),
+                ("error", ("Failed to flush DNS", "Run the app as Administrator")),
+                ("success", "Internet connectivity: OK"),
+                ("success", "Ping successful"),
+                ("success", "DNS cache flushed"),
+                ("success", "Port 443 is OPEN"),
+                ("warning", ("Internet connectivity: Issues detected", "Check network adapter and router")),
+                ("warning", ("IP renewal may have issues", "Check if DHCP server is reachable")),
+                
+                ("SECTION", "=== Device Join Status ==="),
+                ("error", ("Failed to run dsregcmd", "Run as Administrator")),
+                ("success", "Join Type: Hybrid Joined | Intune: Enrolled"),
+                
+                ("SECTION", "=== Log Analyzer Errors ==="),
+                ("error", ("Invalid archive format: not a gzip file", "Ensure the file is a valid .tar, .tgz, or .tar.gz archive")),
+                ("error", ("Permission denied extracting archive", "Try running as Administrator")),
+                ("error", ("File not found: C:\\logs\\test.log", "Check the file path and try again")),
+                ("error", ("Invalid regex pattern: unbalanced parenthesis", "Check your regex syntax")),
+                ("error", ("Event log query timed out", "Try a shorter time range or fewer filters")),
+                ("warning", ("No .log files found in archive", None)),
+                ("warning", ("No events to export", None)),
+                ("success", "Analysis complete!"),
+                ("success", "Found 47 events"),
+                ("success", "Complete: 150/10000 lines matched"),
+                
+                ("SECTION", "=== Windows Updates ==="),
+                ("error", ("Admin required to install updates", "Click 'Run as Admin' in toolbar")),
+                ("error", ("PSWindowsUpdate module not available", "Run: Install-Module PSWindowsUpdate -Force")),
+                ("warning", ("Select at least one update", None)),
+                ("success", "No updates available"),
+                ("success", "3 updates installed"),
+                
+                ("SECTION", "=== Admin/Permission ==="),
+                ("error", ("Admin required for Chocolatey install", "Click 'Run as Admin' in the toolbar")),
+                ("error", ("Permission denied writing to: C:\\output.txt", "Try a different save location")),
+                ("warning", ("Could not save report: access denied", None)),
+            ]
+            
+            self.root.after(0, lambda: self.log(""))
+            self.root.after(0, lambda: self.log("🧪 ═══════════════════════════════════════"))
+            self.root.after(0, lambda: self.log("🧪 CENTRALIZED LOGGING TEST"))
+            self.root.after(0, lambda: self.log("🧪 ═══════════════════════════════════════"))
+            self.root.after(0, lambda: self.log(""))
+            
+            time.sleep(0.5)
+            
+            for test_type, data in tests:
+                if test_type == "SECTION":
+                    self.root.after(0, lambda d=data: self.log(""))
+                    self.root.after(0, lambda d=data: self.log(f"🧪 {d}"))
+                    self.root.after(0, lambda: self.log(""))
+                    time.sleep(0.3)
+                elif test_type == "log":
+                    self.root.after(0, lambda d=data: self.log(d))
+                elif test_type == "success":
+                    self.root.after(0, lambda d=data: self.log_success(d))
+                elif test_type == "warning":
+                    msg, hint = data
+                    self.root.after(0, lambda m=msg, h=hint: self.log_warning(m, h))
+                elif test_type == "error":
+                    msg, hint = data
+                    self.root.after(0, lambda m=msg, h=hint: self.log_error(m, h))
+                
+                time.sleep(0.1)
+            
+            self.root.after(0, lambda: self.log(""))
+            self.root.after(0, lambda: self.log("🧪 ═══════════════════════════════════════"))
+            self.root.after(0, lambda: self.log("🧪 TEST COMPLETE"))
+            self.root.after(0, lambda: self.log("🧪 ═══════════════════════════════════════"))
+            
+            error_count = sum(1 for t, _ in tests if t == "error")
+            warn_count = sum(1 for t, _ in tests if t == "warning")
+            success_count = sum(1 for t, _ in tests if t == "success")
+            
+            self.root.after(0, lambda: self.log(f"🧪 Errors: {error_count} | Warnings: {warn_count} | Success: {success_count}"))
+            self.root.after(0, lambda: self.log(""))
+        
+        threading.Thread(target=_test, daemon=True).start()

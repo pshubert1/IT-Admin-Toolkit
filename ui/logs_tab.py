@@ -195,7 +195,7 @@ class LogsTab:
             self.generic_file_entry.insert(0, filepath)
             
             # Get file info
-            analyzer = GenericLogAnalyzer()
+            analyzer = GenericLogAnalyzer(app=self.app)
             stats = analyzer.get_log_stats(filepath)
             
             size_kb = stats['file_size'] / 1024
@@ -236,7 +236,7 @@ class LogsTab:
         log_file = self.generic_file_entry.get()
         
         if not log_file or not os.path.exists(log_file):
-            self.app.log("⚠️ Please select a valid log file")
+            self.app.log_warning("Please select a valid log file")
             return
         
         def load():
@@ -250,10 +250,10 @@ class LogsTab:
                 
                 # Update UI
                 self.app.root.after(0, lambda: self._generic_display_results(content, line_count, line_count))
-                self.app.root.after(0, lambda: self.app.log(f"✅ Loaded {line_count:,} lines"))
+                self.app.root.after(0, lambda: self.app.log_success(f"Loaded {line_count:,} lines"))
                 
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda:self.app.log_error(f"Error: {str(e)}"))
             finally:
                 self.app.root.after(0, self.progress.stop)
         
@@ -264,7 +264,7 @@ class LogsTab:
         log_file = self.generic_file_entry.get()
         
         if not log_file or not os.path.exists(log_file):
-            self.app.log("⚠️ Please select a valid log file")
+            self.app.log_warning("Please select a valid log file")
             return
         
         # Parse dates
@@ -278,7 +278,7 @@ class LogsTab:
             if end_str and end_str != "(optional)":
                 end_time = datetime.strptime(end_str, "%Y-%m-%d %H:%M:%S")
         except ValueError as e:
-            self.app.log(f"⚠️ Invalid date format (use YYYY-MM-DD HH:MM:SS): {e}")
+            self.app.log_warning(f"Invalid date format (use YYYY-MM-DD HH:MM:SS): {e}")
             return
         
         # Parse keywords
@@ -299,7 +299,7 @@ class LogsTab:
         def analyze():
             self.app.root.after(0, self.progress.start)
             
-            analyzer = GenericLogAnalyzer(self.app.log)
+            analyzer = GenericLogAnalyzer(app=self.app)
             results = analyzer.analyze(
                 log_file, output_path,
                 start_time, end_time,
@@ -547,11 +547,11 @@ class LogsTab:
         output_file = self.esxi_output_entry.get()
         
         if not archive_file or not os.path.exists(archive_file):
-            self.app.log("⚠️ Please select a valid archive file")
+            self.app.log_warning("Please select a valid archive file")
             return
         
         if not output_file:
-            self.app.log("⚠️ Please specify an output file")
+            self.app.log_warning("Please specify an output file")
             return
         
         # Parse dates
@@ -565,14 +565,14 @@ class LogsTab:
             if end_str and end_str != "YYYY-MM-DD HH:MM:SS":
                 end_time = datetime.strptime(end_str, "%Y-%m-%d %H:%M:%S")
         except ValueError as e:
-            self.app.log(f"⚠️ Invalid date format: {e}")
+            self.app.log_warning(f"Invalid date format: {e}")
             return
         
         # Run in background
         def analyze():
             self.app.root.after(0, self.progress.start)
             
-            analyzer = ESXiLogAnalyzer(self.app.log)
+            analyzer = ESXiLogAnalyzer(app=self.app)
             results = analyzer.analyze(archive_file, output_file, start_time, end_time)
             
             # Show preview
@@ -635,7 +635,7 @@ class LogsTab:
         self.win_log_var = tk.StringVar(value="System")
         
         # Get available logs
-        analyzer = WindowsEventLogAnalyzer()
+        analyzer = WindowsEventLogAnalyzer(app=self.app)
         available_logs = analyzer.get_available_logs()
         
         self.win_log_combo = ttk.Combobox(log_frame, textvariable=self.win_log_var,
@@ -768,7 +768,7 @@ class LogsTab:
         try:
             hours = int(self.win_hours_var.get())
         except ValueError:
-            self.app.log("⚠️ Invalid hours value")
+            self.app.log_warning("Invalid hours value")
             return
         
         # Parse level
@@ -784,7 +784,7 @@ class LogsTab:
             try:
                 event_ids = [int(id.strip()) for id in ids_str.split(',') if id.strip()]
             except ValueError:
-                self.app.log("⚠️ Invalid event ID format")
+                self.app.log_warning("Invalid event ID format")
                 return
         
         # Parse keywords
@@ -796,7 +796,7 @@ class LogsTab:
         def search():
             self.app.root.after(0, self.progress.start)
             
-            analyzer = WindowsEventLogAnalyzer(self.app.log)
+            analyzer = WindowsEventLogAnalyzer(app=self.app)
             results = analyzer.analyze(log_name, hours, level, event_ids, keywords)
             
             self.win_results = results
@@ -823,7 +823,7 @@ class LogsTab:
     def _win_export(self):
         """Export Windows Event results."""
         if not self.win_results or not self.win_results['events']:
-            self.app.log("⚠️ No results to export")
+            self.app.log_warning("No results to export")
             return
         
         filepath = filedialog.asksaveasfilename(

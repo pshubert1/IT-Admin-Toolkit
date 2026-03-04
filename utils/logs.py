@@ -6,23 +6,40 @@ import tarfile
 import os
 import re
 import shutil
+import subprocess
 from datetime import datetime
 
 
 class ESXiLogAnalyzer:
     """Analyzer for ESXi log archives."""
     
-    def __init__(self, log_callback=None):
-        self.log = log_callback or print
-        self.results = {
-            'total_files': 0,
-            'total_lines': 0,
-            'filtered_lines': 0,
-            'errors': []
-        }
+    def __init__(self, app=None, log_callback=None):
+        self.app = app
+        self._log = log_callback or (app.log if app else print)
+    
+    def log(self, msg):
+        self._log(msg)
+    
+    def log_error(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_error'):
+            self.app.log_error(msg, hint)
+        else:
+            self._log(f"❌ {msg}")
+    
+    def log_warning(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_warning'):
+            self.app.log_warning(msg, hint)
+        else:
+            self._log(f"⚠️ {msg}")
+    
+    def log_success(self, msg):
+        if self.app and hasattr(self.app, 'log_success'):
+            self.app.log_success(msg)
+        else:
+            self._log(f"✅ {msg}")
     
     def analyze(self, archive_path, output_path, start_time=None, end_time=None):
-        self.results = {
+        results = {
             'total_files': 0,
             'total_lines': 0,
             'filtered_lines': 0,
@@ -36,12 +53,12 @@ class ESXiLogAnalyzer:
             self._extract_archive(archive_path, extract_dir)
             
             log_files = self._find_logs(extract_dir)
-            self.results['total_files'] = len(log_files)
+            results['total_files'] = len(log_files)
             self.log(f"📄 Found {len(log_files)} log files")
             
             if not log_files:
-                self.log("⚠️ No .log files found in archive")
-                return self.results
+                self.log_warning("No .log files found in archive")
+                return results
             
             if os.path.exists(output_path):
                 os.remove(output_path)
@@ -49,21 +66,28 @@ class ESXiLogAnalyzer:
             for i, log_path in enumerate(log_files):
                 log_name = os.path.basename(log_path)
                 self.log(f"   Processing ({i+1}/{len(log_files)}): {log_name}")
-                self._analyze_log(log_path, output_path, start_time, end_time)
+                self._analyze_log(log_path, output_path, start_time, end_time, results)
             
-            self.log(f"✅ Analysis complete!")
-            self.log(f"   📊 Total lines scanned: {self.results['total_lines']}")
-            self.log(f"   📋 Lines matching filter: {self.results['filtered_lines']}")
+            self.log_success("Analysis complete!")
+            self.log(f"   📊 Total lines scanned: {results['total_lines']}")
+            self.log(f"   📋 Lines matching filter: {results['filtered_lines']}")
             self.log(f"📄 Output saved to: {output_path}")
             
+        except tarfile.TarError as e:
+            self.log_error(f"Invalid archive format: {str(e)}",
+                hint="Ensure the file is a valid .tar, .tgz, or .tar.gz archive")
+            results['errors'].append(str(e))
+        except PermissionError:
+            self.log_error("Permission denied extracting archive",
+                hint="Try running as Administrator or choose a different output location")
         except Exception as e:
-            self.log(f"❌ Error: {str(e)}")
-            self.results['errors'].append(str(e))
+            self.log_error(f"Analysis failed: {str(e)}")
+            results['errors'].append(str(e))
         finally:
             if os.path.exists(extract_dir):
                 shutil.rmtree(extract_dir, ignore_errors=True)
         
-        return self.results
+        return results
     
     def _extract_archive(self, file_path, output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -78,12 +102,12 @@ class ESXiLogAnalyzer:
                     log_files.append(os.path.join(root, file))
         return log_files
     
-    def _analyze_log(self, log_path, output_path, start_time=None, end_time=None):
+    def _analyze_log(self, log_path, output_path, start_time, end_time, results):
         try:
             with open(log_path, 'r', encoding='utf-8', errors='ignore') as log_file:
                 with open(output_path, 'a', encoding='utf-8') as output:
                     for line in log_file:
-                        self.results['total_lines'] += 1
+                        results['total_lines'] += 1
                         
                         match = re.match(r"^(\d{4}-\d{2}-\d{2}T?\d{2}:\d{2}:\d{2})", line)
                         if match:
@@ -97,23 +121,40 @@ class ESXiLogAnalyzer:
                                     continue
                                 
                                 output.write(line)
-                                self.results['filtered_lines'] += 1
+                                results['filtered_lines'] += 1
                             except ValueError:
                                 pass
         except Exception as e:
-            self.results['errors'].append(f"{os.path.basename(log_path)}: {e}")
+            results['errors'].append(f"{os.path.basename(log_path)}: {e}")
 
 
 class GenericLogAnalyzer:
     """Analyzer for generic text log files."""
     
-    def __init__(self, log_callback=None):
-        self.log = log_callback or print
-        self.results = {
-            'total_lines': 0,
-            'filtered_lines': 0,
-            'matched_lines': []
-        }
+    def __init__(self, app=None, log_callback=None):
+        self.app = app
+        self._log = log_callback or (app.log if app else print)
+    
+    def log(self, msg):
+        self._log(msg)
+    
+    def log_error(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_error'):
+            self.app.log_error(msg, hint)
+        else:
+            self._log(f"❌ {msg}")
+    
+    def log_warning(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_warning'):
+            self.app.log_warning(msg, hint)
+        else:
+            self._log(f"⚠️ {msg}")
+    
+    def log_success(self, msg):
+        if self.app and hasattr(self.app, 'log_success'):
+            self.app.log_success(msg)
+        else:
+            self._log(f"✅ {msg}")
     
     TIMESTAMP_PATTERNS = [
         (r'^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})', '%Y-%m-%dT%H:%M:%S'),
@@ -126,7 +167,7 @@ class GenericLogAnalyzer:
     
     def analyze(self, log_path, output_path=None, start_time=None, end_time=None, 
                 keywords=None, regex_pattern=None, case_sensitive=False):
-        self.results = {
+        results = {
             'total_lines': 0,
             'filtered_lines': 0,
             'matched_lines': []
@@ -141,33 +182,38 @@ class GenericLogAnalyzer:
                     flags = 0 if case_sensitive else re.IGNORECASE
                     regex = re.compile(regex_pattern, flags)
                 except re.error as e:
-                    self.log(f"⚠️ Invalid regex pattern: {e}")
-                    return self.results
+                    self.log_error(f"Invalid regex pattern: {e}",
+                        hint="Check your regex syntax")
+                    return results
             
             if keywords and not case_sensitive:
                 keywords = [k.lower() for k in keywords]
             
             with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
-                    self.results['total_lines'] += 1
+                    results['total_lines'] += 1
                     
                     if self._matches_filters(line, start_time, end_time, keywords, regex, case_sensitive):
-                        self.results['filtered_lines'] += 1
-                        self.results['matched_lines'].append(line)
+                        results['filtered_lines'] += 1
+                        results['matched_lines'].append(line)
             
-            if output_path and self.results['matched_lines']:
+            if output_path and results['matched_lines']:
                 with open(output_path, 'w', encoding='utf-8') as f:
-                    f.writelines(self.results['matched_lines'])
-                self.log(f"💾 Saved {self.results['filtered_lines']} lines to: {output_path}")
+                    f.writelines(results['matched_lines'])
+                self.log(f"💾 Saved {results['filtered_lines']} lines to: {output_path}")
             
-            self.log(f"✅ Complete: {self.results['filtered_lines']}/{self.results['total_lines']} lines matched")
+            self.log_success(f"Complete: {results['filtered_lines']}/{results['total_lines']} lines matched")
             
         except FileNotFoundError:
-            self.log(f"❌ File not found: {log_path}")
+            self.log_error(f"File not found: {log_path}",
+                hint="Check the file path and try again")
+        except PermissionError:
+            self.log_error(f"Permission denied reading: {log_path}",
+                hint="Try running as Administrator")
         except Exception as e:
-            self.log(f"❌ Error: {str(e)}")
+            self.log_error(f"Analysis failed: {str(e)}")
         
-        return self.results
+        return results
     
     def _matches_filters(self, line, start_time, end_time, keywords, regex, case_sensitive):
         if start_time or end_time:
@@ -219,18 +265,15 @@ class GenericLogAnalyzer:
             with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for i, line in enumerate(f):
                     stats['total_lines'] += 1
-                    
                     if i < 10:
                         stats['sample_lines'].append(line.rstrip())
-                    
                     ts = self._extract_timestamp(line)
                     if ts:
                         if stats['first_timestamp'] is None:
                             stats['first_timestamp'] = ts
                         stats['last_timestamp'] = ts
-                        
         except Exception as e:
-            self.log(f"❌ Error reading file: {e}")
+            self.log_error(f"Error reading file: {e}")
         
         return stats
 
@@ -238,24 +281,45 @@ class GenericLogAnalyzer:
 class WindowsEventLogAnalyzer:
     """Analyzer for Windows Event Logs."""
     
-    def __init__(self, log_callback=None):
-        self.log = log_callback or print
+    def __init__(self, app=None, log_callback=None):
+        self.app = app
+        self._log = log_callback or (app.log if app else print)
         self.results = {
             'total_events': 0,
             'events': []
         }
     
+    def log(self, msg):
+        self._log(msg)
+    
+    def log_error(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_error'):
+            self.app.log_error(msg, hint)
+        else:
+            self._log(f"❌ {msg}")
+    
+    def log_warning(self, msg, hint=None):
+        if self.app and hasattr(self.app, 'log_warning'):
+            self.app.log_warning(msg, hint)
+        else:
+            self._log(f"⚠️ {msg}")
+    
+    def log_success(self, msg):
+        if self.app and hasattr(self.app, 'log_success'):
+            self.app.log_success(msg)
+        else:
+            self._log(f"✅ {msg}")
+    
     def get_available_logs(self):
-        import subprocess
-        
         try:
             result = subprocess.run(
-                ["powershell", "-Command", 
-                 "Get-WinEvent -ListLog * -ErrorAction SilentlyContinue | Where-Object {$_.RecordCount -gt 0} | Select-Object -ExpandProperty LogName | Sort-Object"],
+                ["powershell", "-ExecutionPolicy", "Bypass", "-Command", 
+                 "Get-WinEvent -ListLog * -ErrorAction SilentlyContinue | "
+                 "Where-Object {$_.RecordCount -gt 0} | "
+                 "Select-Object -ExpandProperty LogName | Sort-Object"],
                 capture_output=True, text=True, timeout=30,
                 creationflags=subprocess.CREATE_NO_WINDOW
             )
-            
             if result.returncode == 0:
                 logs = [l.strip() for l in result.stdout.strip().split('\n') if l.strip()]
                 return logs
@@ -264,7 +328,6 @@ class WindowsEventLogAnalyzer:
             return ["System", "Application", "Security"]
     
     def analyze(self, log_name="System", hours=24, level=None, event_ids=None, keywords=None):
-        import subprocess
         from datetime import timedelta
         
         self.results = {'total_events': 0, 'events': []}
@@ -278,7 +341,6 @@ class WindowsEventLogAnalyzer:
         
         if level:
             filter_parts.append(f"Level={level}")
-        
         if event_ids:
             ids_str = ','.join(str(id) for id in event_ids)
             filter_parts.append(f"Id={ids_str}")
@@ -300,7 +362,7 @@ class WindowsEventLogAnalyzer:
         
         try:
             result = subprocess.run(
-                ["powershell", "-Command", ps_cmd],
+                ["powershell", "-ExecutionPolicy", "Bypass", "-Command", ps_cmd],
                 capture_output=True, text=True, timeout=60,
                 creationflags=subprocess.CREATE_NO_WINDOW
             )
@@ -308,7 +370,7 @@ class WindowsEventLogAnalyzer:
             if result.returncode == 0 and result.stdout.strip():
                 for line in result.stdout.strip().split('\n'):
                     if line.startswith("ERROR:"):
-                        self.log(f"⚠️ {line}")
+                        self.log_warning(line)
                         continue
                     
                     parts = line.split('|', 3)
@@ -327,18 +389,19 @@ class WindowsEventLogAnalyzer:
                         self.results['events'].append(event)
                         self.results['total_events'] += 1
             
-            self.log(f"✅ Found {self.results['total_events']} events")
+            self.log_success(f"Found {self.results['total_events']} events")
             
         except subprocess.TimeoutExpired:
-            self.log("⚠️ Query timed out")
+            self.log_error("Event log query timed out",
+                hint="Try a shorter time range or fewer filters")
         except Exception as e:
-            self.log(f"❌ Error: {str(e)}")
+            self.log_error(f"Event log query failed: {str(e)}")
         
         return self.results
     
     def export(self, output_path):
         if not self.results['events']:
-            self.log("⚠️ No events to export")
+            self.log_warning("No events to export")
             return
         
         try:
@@ -348,6 +411,9 @@ class WindowsEventLogAnalyzer:
                 for event in self.results['events']:
                     f.write(f"{event['time']}\t{event['id']}\t{event['level']}\t{event['message']}\n")
             
-            self.log(f"💾 Exported to: {output_path}")
+            self.log_success(f"Exported to: {output_path}")
+        except PermissionError:
+            self.log_error(f"Permission denied writing to: {output_path}",
+                hint="Try a different save location")
         except Exception as e:
-            self.log(f"❌ Export failed: {e}")
+            self.log_error(f"Export failed: {e}")

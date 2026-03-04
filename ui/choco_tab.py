@@ -24,12 +24,10 @@ class ChocoTab:
     
     def _find_choco(self):
         """Find the choco.exe path."""
-        # Check common install location
         default_path = r"C:\ProgramData\chocolatey\bin\choco.exe"
         if os.path.exists(default_path):
             return default_path
         
-        # Check if it's in PATH
         import shutil
         found = shutil.which("choco")
         if found:
@@ -41,7 +39,7 @@ class ChocoTab:
         """Refresh the choco.exe path (call after install)."""
         self.choco_exe = self._find_choco()
         if self.choco_exe:
-            self.app.log(f"✅ Chocolatey found at: {self.choco_exe}")
+            self.app.log_success(f"Chocolatey found at: {self.choco_exe}")
         return self.choco_exe
     
     def _run_choco(self, args, **kwargs):
@@ -50,7 +48,7 @@ class ChocoTab:
             self._refresh_choco_path()
         
         if not self.choco_exe:
-            raise FileNotFoundError("Chocolatey not installed. Click 'INSTALL CHOCO' first.")
+            raise FileNotFoundError("Chocolatey not installed")
         
         cmd = [self.choco_exe] + args
         return subprocess.run(cmd, **kwargs)
@@ -178,38 +176,36 @@ class ChocoTab:
                                         creationflags=subprocess.CREATE_NO_WINDOW)
                 if result.returncode == 0:
                     version = result.stdout.strip()
-                    self.app.root.after(0, lambda: self.app.log(f"✅ Chocolatey v{version} installed"))
+                    self.app.root.after(0, lambda: self.app.log_success(f"Chocolatey v{version} installed"))
                 else:
-                    self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not working properly"))
+                    self.app.root.after(0, lambda: self.app.log_error("Chocolatey not working properly",
+                        hint="Try reinstalling with the INSTALL CHOCO button"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' to install"))
+                self.app.root.after(0, lambda: self.app.log_error("Chocolatey not installed",
+                    hint="Click 'INSTALL CHOCO' to install it"))
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda: self.app.log_error(f"Choco check failed: {str(e)}"))
         
         threading.Thread(target=check, daemon=True).start()
     
     def _install_choco(self):
         """Install or repair Chocolatey."""
         if not self.app.is_admin():
-            tk.messagebox.showwarning("Admin Required", 
-                                     "Please run the app as administrator to install Chocolatey.")
-            self.app.log("❌ Admin required for Chocolatey install")
+            self.app.log_error("Admin required for Chocolatey install",
+                hint="Click 'Run as Admin' in the toolbar")
             return
         
         self.app.log("📥 Installing Chocolatey (opening PowerShell window)...")
         
-        # NOTE: No 'exit' commands — the powershell runner wraps in try/finally
         script = r"""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Installing/Repairing Chocolatey" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Set execution policy for this session
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 
-# Check if already installed
 $chocoPath = "C:\ProgramData\chocolatey\bin\choco.exe"
 if (Test-Path $chocoPath) {
     Write-Host "🔄 Chocolatey found - checking version..." -ForegroundColor Yellow
@@ -229,18 +225,15 @@ if (Test-Path $chocoPath) {
     Write-Host "📦 Chocolatey not found - Installing fresh..." -ForegroundColor Yellow
     Write-Host ""
     
-    # Clean any partial old install
     if (Test-Path "C:\ProgramData\chocolatey") {
         Write-Host "🧹 Removing old partial install..." -ForegroundColor Yellow
         Remove-Item -Recurse -Force "C:\ProgramData\chocolatey" -ErrorAction SilentlyContinue
     }
     
-    # Download and run installer
     Write-Host "📥 Downloading Chocolatey installer..." -ForegroundColor Yellow
     $installScript = (New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')
     Invoke-Expression $installScript
     
-    # Verify installation
     if (Test-Path "C:\ProgramData\chocolatey\bin\choco.exe") {
         Write-Host ""
         Write-Host "✅ Chocolatey installed successfully!" -ForegroundColor Green
@@ -251,7 +244,6 @@ if (Test-Path $chocoPath) {
     }
 }
 
-# Refresh environment path
 Write-Host ""
 Write-Host "🔄 Refreshing environment PATH..." -ForegroundColor Yellow
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
@@ -261,7 +253,7 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "  Chocolatey Setup Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey features." -ForegroundColor Yellow
+Write-Host "Close and reopen the IT Admin Toolkit to use Chocolatey features." -ForegroundColor Yellow
 """
         
         self.app.powershell.run(script, "Install Chocolatey", interactive=True)
@@ -270,7 +262,7 @@ Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey featu
         """Search Chocolatey repository."""
         query = self.search_entry.get().strip()
         if not query:
-            self.app.log("⚠️ Enter a search term")
+            self.app.log_warning("Enter a search term")
             return
         
         self.app.log(f"🔍 Searching Chocolatey for '{query}'...")
@@ -285,11 +277,13 @@ Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey featu
                     lines = result.stdout.strip().split('\n')
                     self.app.root.after(0, lambda: self._populate_results(lines))
                 else:
-                    self.app.root.after(0, lambda: self.app.log("❌ Search failed"))
+                    self.app.root.after(0, lambda: self.app.log_error("Choco search failed",
+                        hint="Check internet connection or try a different term"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' first"))
+                self.app.root.after(0, lambda: self.app.log_error("Chocolatey not installed",
+                    hint="Click 'INSTALL CHOCO' first"))
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda: self.app.log_error(f"Search error: {str(e)}"))
         
         threading.Thread(target=search, daemon=True).start()
     
@@ -305,13 +299,13 @@ Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey featu
                 self.results_listbox.insert(tk.END, f"{name} ({version})")
                 count += 1
         
-        self.app.log(f"✅ Found {count} packages")
+        self.app.log_success(f"Found {count} packages")
     
     def _install_from_search(self):
         """Install selected package from search results."""
         selection = self.results_listbox.curselection()
         if not selection:
-            self.app.log("⚠️ Select a package from search results")
+            self.app.log_warning("Select a package from search results")
             return
         
         item = self.results_listbox.get(selection[0])
@@ -326,14 +320,16 @@ Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey featu
                                         capture_output=True, text=True, timeout=600,
                                         creationflags=subprocess.CREATE_NO_WINDOW)
                 if result.returncode == 0:
-                    self.app.root.after(0, lambda: self.app.log(f"✅ {package_name} installed"))
+                    self.app.root.after(0, lambda: self.app.log_success(f"{package_name} installed"))
                 else:
                     error = result.stderr.strip() or result.stdout.strip()
-                    self.app.root.after(0, lambda: self.app.log(f"❌ {package_name} failed: {error[:200]}"))
+                    self.app.root.after(0, lambda: self.app.log_error(f"{package_name} install failed",
+                        hint=f"{error[:200]}" if error else "Check internet connection or run as admin"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' first"))
+                self.app.root.after(0, lambda: self.app.log_error("Chocolatey not installed",
+                    hint="Click 'INSTALL CHOCO' first"))
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda: self.app.log_error(f"Install error: {str(e)}"))
             finally:
                 self.app.root.after(0, self.progress.stop)
         
@@ -344,7 +340,7 @@ Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey featu
         selected = [(name, choco_id) for name, (var, choco_id) in self.checkboxes.items() if var.get()]
         
         if not selected:
-            self.app.log("⚠️ Select at least one package")
+            self.app.log_warning("Select at least one package")
             return
         
         self.app.log(f"🚀 Installing {len(selected)} packages...")
@@ -361,15 +357,19 @@ Write-Host "⚠️ Close and reopen the IT Admin Toolkit to use Chocolatey featu
                                            capture_output=True, text=True, timeout=600,
                                            creationflags=subprocess.CREATE_NO_WINDOW)
                     if result.returncode == 0:
-                        self.app.root.after(0, lambda n=app_name: self.app.log(f"✅ {n} installed"))
+                        self.app.root.after(0, lambda n=app_name: self.app.log_success(f"{n} installed"))
                     else:
                         error = result.stderr.strip() or result.stdout.strip()
-                        self.app.root.after(0, lambda n=app_name, e=error: self.app.log(f"❌ {n} failed: {e[:200]}"))
+                        self.app.root.after(0, lambda n=app_name, e=error: 
+                            self.app.log_error(f"{n} install failed",
+                                hint=f"{e[:200]}" if e else "Run as admin or check internet"))
                 except FileNotFoundError:
-                    self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed - Click 'INSTALL CHOCO' first"))
+                    self.app.root.after(0, lambda: self.app.log_error("Chocolatey not installed",
+                        hint="Click 'INSTALL CHOCO' first"))
                     break
                 except Exception as e:
-                    self.app.root.after(0, lambda n=app_name, err=str(e): self.app.log(f"❌ {n} error: {err}"))
+                    self.app.root.after(0, lambda n=app_name, err=str(e): 
+                        self.app.log_error(f"{n} error: {err}"))
             
             self.app.root.after(0, lambda: self.app.log("🎉 All installations complete!"))
             self.app.root.after(0, self.progress.stop)

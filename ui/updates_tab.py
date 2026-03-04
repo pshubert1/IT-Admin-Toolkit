@@ -92,7 +92,7 @@ class UpdatesTab:
         if not self.app.is_admin():
             tk.messagebox.showwarning("Admin Required", 
                                       "Please run the app as administrator to scan/install updates.")
-            self.app.log("❌ Admin required for Windows updates")
+            self.app.log_error("Admin required", hint="Click 'Run as Admin' in toolbar")
             return
         
         self.app.log("🔍 Scanning for Windows updates...")
@@ -198,12 +198,12 @@ class UpdatesTab:
     def _populate_updates(self):
         """Populate the list of updates with checkboxes."""
         if not self.updates:
-            self.app.log("✅ No updates available")
+            self.app.log_success("No updates available")
             ttk.Label(self.scrollable_frame, text="No updates found", 
                       style='DarkFrame.TLabel').pack(pady=10)
             return
         
-        self.app.log(f"✅ Found {len(self.updates)} updates")
+        self.app.log_success(f"Found {len(self.updates)} updates")
         
         for title, kb, size in self.updates:
             label = f"☐ {title} (KB{kb}, Size: {size})"
@@ -218,12 +218,12 @@ class UpdatesTab:
         if not self.app.is_admin():
             tk.messagebox.showwarning("Admin Required", 
                                       "Please run the app as administrator to install updates.")
-            self.app.log("❌ Admin required for updates")
+            self.app.log_error("Admin required", hint="Click 'Run as Admin' in toolbar")
             return
         
         selected = [(title, kb) for title, (var, kb) in self.checkboxes.items() if var.get()]
         if not selected:
-            self.app.log("⚠️ Select at least one update")
+            self.app.log_warning("Select at least one update")
             return
         
         self.app.log(f"🚀 Installing {len(selected)} updates...")

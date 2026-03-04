@@ -26,14 +26,14 @@ class UninstallTab:
         selected_apps = [app_data for var, app_data in self.checkboxes.values() if var.get()]
         
         if not selected_apps:
-            self.app.log("⚠️ Select at least one application to update")
+            self.app.log_warning("Select at least one application to update")
             return
         
         # Filter to only Winget and Choco apps (Registry apps can't be updated this way)
         updatable = [(app, src) for app in selected_apps if (src := app[1]) in ("Winget", "Chocolatey")]
         
         if not updatable:
-            self.app.log("⚠️ Selected apps cannot be updated (only Winget/Choco apps supported)")
+            self.app.log_warning("Selected apps cannot be updated (only Winget/Choco apps supported)")
             return
         
         self.app.log(f"🔄 Updating {len(updatable)} application(s)...")
@@ -87,9 +87,9 @@ class UninstallTab:
                 )
                 
                 if result.returncode == 0:
-                    self.app.root.after(0, lambda: self.app.log("✅ All Winget apps updated"))
+                    self.app.root.after(0, lambda: self.app.log_success("All Winget apps updated"))
                 else:
-                    self.app.root.after(0, lambda: self.app.log("⚠️ Some updates may have failed"))
+                    self.app.root.after(0, lambda: self.app.log_warning("Some updates may have failed"))
                     
                 if self.app.log_script_output.get() and result.stdout:
                     for line in result.stdout.strip().split('\n')[-10:]:  # Last 10 lines
@@ -97,11 +97,11 @@ class UninstallTab:
                             self.app.root.after(0, lambda l=line: self.app.log(f"   {l}"))
                             
             except subprocess.TimeoutExpired:
-                self.app.root.after(0, lambda: self.app.log("⚠️ Update timed out (may still be running)"))
+                self.app.root.after(0, lambda: self.app.log_warning("Update timed out (may still be running)"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Winget not installed"))
+                self.app.root.after(0, lambda: self.app.log_error("Winget not installed"))
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda: self.app.log_error(f"Error: {str(e)}"))
             
             self.app.root.after(0, self.progress.stop)
         
@@ -122,9 +122,9 @@ class UninstallTab:
                 )
                 
                 if result.returncode == 0:
-                    self.app.root.after(0, lambda: self.app.log("✅ All Chocolatey apps updated"))
+                    self.app.root.after(0, lambda: self.app.log_success("All Chocolatey apps updated"))
                 else:
-                    self.app.root.after(0, lambda: self.app.log("⚠️ Some updates may have failed"))
+                    self.app.root.after(0, lambda: self.app.log_warning("Some updates may have failed"))
                     
                 if self.app.log_script_output.get() and result.stdout:
                     for line in result.stdout.strip().split('\n')[-10:]:  # Last 10 lines
@@ -132,11 +132,11 @@ class UninstallTab:
                             self.app.root.after(0, lambda l=line: self.app.log(f"   {l}"))
                             
             except subprocess.TimeoutExpired:
-                self.app.root.after(0, lambda: self.app.log("⚠️ Update timed out (may still be running)"))
+                self.app.root.after(0, lambda: self.app.log_warning("Update timed out (may still be running)"))
             except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log("❌ Chocolatey not installed"))
+                self.app.root.after(0, lambda: self.app.log_error("Chocolatey not installed"))
             except Exception as e:
-                self.app.root.after(0, lambda: self.app.log(f"❌ Error: {str(e)}"))
+                self.app.root.after(0, lambda: self.app.log_error(f"Error: {str(e)}"))
             
             self.app.root.after(0, self.progress.stop)
         
@@ -511,7 +511,7 @@ class UninstallTab:
         apps_to_uninstall = [app_data for var, app_data in self.checkboxes.values() if var.get()]
         
         if not apps_to_uninstall:
-            self.app.log("⚠️ Select at least one application to uninstall")
+            self.app.log_warning("Select at least one application to uninstall")
             return
         
         # Confirm
@@ -733,7 +733,7 @@ class UninstallTab:
         selected_apps = [app_data for var, app_data in self.checkboxes.values() if var.get()]
         
         if not selected_apps:  # <-- CHANGED from 'selected' to 'selected_apps'
-            self.app.log("⚠️ Select applications to clean up")
+            self.app.log_warning("Select applications to clean up")
             return
         
         result = messagebox.askyesno(
@@ -759,7 +759,7 @@ class UninstallTab:
                 self.app.root.after(0, lambda n=name: self.app.log(f"🧹 Cleaning up {n}..."))
                 self._perform_cleanup(name, install_location, reg_key)
             
-            self.app.root.after(0, lambda: self.app.log("✅ Cleanup complete!"))
+            self.app.root.after(0, lambda: self.app.log_success("Cleanup complete!"))
             self.app.root.after(0, self.progress.stop)
         
         threading.Thread(target=cleanup, daemon=True).start()
@@ -767,7 +767,7 @@ class UninstallTab:
     def _export_list(self):
         """Export installed apps list to a text file."""
         if not self.installed_apps:
-            self.app.log("⚠️ Scan for apps first")
+            self.app.log_warning("Scan for apps first")
             return
         
         from tkinter import filedialog

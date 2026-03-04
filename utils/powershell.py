@@ -31,7 +31,6 @@ class PowerShellRunner:
         """Run script in a visible PowerShell window for user input."""
         try:
             with tempfile.NamedTemporaryFile(mode='w', suffix='.ps1', delete=False, encoding='utf-8') as f:
-                # Wrap entire script in try/finally so window NEVER closes unexpectedly
                 full_script = (
                     'try {\n'
                     f'{script}\n'
@@ -56,7 +55,7 @@ class PowerShellRunner:
             ]
             
             subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
-            self.app.log(f"📺 Opened {name} in new window")
+            self.app.log_success(f"Opened {name} in new window")
             
             def cleanup():
                 import time
@@ -68,8 +67,14 @@ class PowerShellRunner:
             
             threading.Thread(target=cleanup, daemon=True).start()
             
+        except FileNotFoundError:
+            self.app.log_error(f"PowerShell not found",
+                hint="Verify PowerShell is installed at C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\")
+        except PermissionError:
+            self.app.log_error(f"Permission denied launching {name}",
+                hint="Try running the app as Administrator")
         except Exception as e:
-            self.app.log(f"💥 Error: {str(e)}")
+            self.app.log_error(f"Failed to launch {name}: {str(e)}")
     
     def _execute(self, script, name):
         """Execute PowerShell script in background and capture output."""
@@ -112,15 +117,24 @@ class PowerShellRunner:
             process.wait(timeout=600)
             exit_code = process.returncode
             
-            self.app.root.after(0, lambda: self._append_output(f"\n{'='*50}\n✅ Completed (exit code: {exit_code})"))
-            self.app.root.after(0, lambda: self.app.log(f"✅ {name} completed (exit code: {exit_code})"))
+            if exit_code == 0:
+                self.app.root.after(0, lambda: self._append_output(f"\n{'='*50}\n✅ Completed successfully"))
+                self.app.root.after(0, lambda: self.app.log_success(f"{name} completed"))
+            else:
+                self.app.root.after(0, lambda: self._append_output(f"\n{'='*50}\n⚠️ Completed with exit code: {exit_code}"))
+                self.app.root.after(0, lambda: self.app.log_warning(f"{name} completed with exit code: {exit_code}",
+                    hint="Check script output for details"))
             
         except subprocess.TimeoutExpired:
             self.app.root.after(0, lambda: self._append_output("\n⏰ TIMEOUT: Script took too long"))
-            self.app.root.after(0, lambda: self.app.log(f"⏰ {name} timed out"))
+            self.app.root.after(0, lambda: self.app.log_error(f"{name} timed out after 600s",
+                hint="The script may still be running in the background"))
+        except FileNotFoundError:
+            self.app.root.after(0, lambda: self.app.log_error("PowerShell not found",
+                hint="Verify PowerShell is installed"))
         except Exception as e:
             self.app.root.after(0, lambda: self._append_output(f"\n💥 ERROR: {str(e)}"))
-            self.app.root.after(0, lambda: self.app.log(f"💥 {name} error: {str(e)}"))
+            self.app.root.after(0, lambda: self.app.log_error(f"{name} error: {str(e)}"))
         finally:
             self.app.root.after(0, scripts_tab.script_progress.stop)
     
