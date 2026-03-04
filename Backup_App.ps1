@@ -16,7 +16,7 @@ if (-not (Test-Path $7z)) {
 $source = "$env:USERPROFILE\Install_Apps"
 $backupFolder = "$env:USERPROFILE\Install_Apps\Backups"
 $backup = "$backupFolder\$(Get-Date -Format 'yy-MM-dd_HHmm').7z"
-$keepCount = 10  # Number of backups to keep
+$keepCount = 20  # Number of backups to keep
 
 # Create backup folder if it doesn't exist
 if (-not (Test-Path $backupFolder)) {

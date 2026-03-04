@@ -22,7 +22,7 @@ from utils.admin import is_admin, restart_as_admin
 from ui.logs_tab import LogsTab
 from ui.network_tab import NetworkTab
 from ui.updates_tab import UpdatesTab
-
+from version import VERSION
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller."""
@@ -36,7 +36,7 @@ def resource_path(relative_path):
 class AppInstaller:
     def __init__(self, root):
         self.root = root
-        self.root.title("IT Admin Toolkit - Dark Mode")
+        self.root.title(f"IT Admin Toolkit v{VERSION}")
         self.root.geometry("950x750")
         self.root.minsize(600, 400)
         self.root.resizable(True, True)
@@ -53,9 +53,9 @@ class AppInstaller:
         
         # Update title to show admin status
         if self.admin_status:
-            self.root.title("IT Admin Toolkit [Administrator]")
+            self.root.title(f"IT Admin Toolkit v{VERSION} [Administrator]")
         else:
-            self.root.title("IT Admin Toolkit [Limited Mode]")
+            self.root.title(f"IT Admin Toolkit v{VERSION} [Limited Mode]")
         
         # Settings
         self.colors = COLORS
