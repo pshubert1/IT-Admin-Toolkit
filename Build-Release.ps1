@@ -222,6 +222,34 @@ if (Test-Path (Join-Path $ProjectDir "build")) {
 if (Test-Path $DistDir) { 
     Remove-Item -Recurse -Force $DistDir 
 }
+# Generate version info file for EXE metadata
+Write-Host "   Generating version info..." -ForegroundColor Gray
+$versionParts = $newVersion.Split('.')
+$major = $versionParts[0]
+$minor = $versionParts[1]
+$patch = $versionParts[2]
+$year = (Get-Date).Year
+
+$versionInfoTemplate = Join-Path $ProjectDir "version_info_template.py"
+$versionInfoFile = Join-Path $ProjectDir "version_info.txt"
+
+if (Test-Path $versionInfoTemplate) {
+    $content = Get-Content $versionInfoTemplate -Raw
+    $content = $content -replace '\{MAJOR\}', $major
+    $content = $content -replace '\{MINOR\}', $minor
+    $content = $content -replace '\{PATCH\}', $patch
+    $content = $content -replace '\{VERSION\}', $newVersion
+    $content = $content -replace '\{COMPANY\}', 'IT Admin Toolkit'
+    $content = $content -replace '\{DESCRIPTION\}', 'IT Admin Toolkit - System Administration Tool'
+    $content = $content -replace '\{INTERNAL_NAME\}', 'IT-Admin-Toolkit'
+    $content = $content -replace '\{COPYRIGHT\}', "Copyright (c) $year Patrick Shubert"
+    $content = $content -replace '\{FILENAME\}', 'IT-Admin-Toolkit.exe'
+    $content = $content -replace '\{PRODUCT_NAME\}', 'IT Admin Toolkit'
+    Set-Content -Path $versionInfoFile -Value $content -Encoding UTF8
+    Write-Host "   ✅ Version info: v$newVersion" -ForegroundColor Green
+} else {
+    Write-Host "   ⚠️ version_info_template.py not found, skipping EXE metadata" -ForegroundColor Yellow
+}
 
 # Build
 Write-Host "   Running PyInstaller..." -ForegroundColor Gray
@@ -237,6 +265,11 @@ $pyinstallerArgs = @(
     "--clean"
     "main.py"
 )
+
+# Add version info if generated
+if (Test-Path $versionInfoFile) {
+    $pyinstallerArgs += "--version-file", $versionInfoFile
+}
 
 # Add manifest if it exists
 if (Test-Path (Join-Path $ProjectDir "admin.manifest")) {
@@ -282,13 +315,14 @@ Write-Host "   ✅ Copied to: release\$versionedExe" -ForegroundColor Green
 Write-Host "   ✅ Updated:   release\IT-Admin-Toolkit-latest.exe" -ForegroundColor Green
 Write-Host ""
 
+
 # ── Step 4: Clean Build Artifacts ─────────────────────────
 Write-Host "🧹 Step 4: Cleanup" -ForegroundColor Yellow
 $specFile = Join-Path $ProjectDir "IT-Admin-Toolkit.spec"
 if (Test-Path $specFile) { Remove-Item $specFile -Force }
 if (Test-Path (Join-Path $ProjectDir "build")) { Remove-Item -Recurse -Force (Join-Path $ProjectDir "build") }
+if (Test-Path $versionInfoFile) { Remove-Item $versionInfoFile -Force }
 Write-Host "   ✅ Cleaned build artifacts" -ForegroundColor Green
-Write-Host ""
 
 # ── Step 5: Git Commit + Tag ─────────────────────────────
 Write-Host "📝 Step 5: Git Commit & Tag" -ForegroundColor Yellow

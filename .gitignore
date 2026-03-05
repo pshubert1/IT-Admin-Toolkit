@@ -42,3 +42,6 @@ desktop.ini
 # Temp files
 *.tmp
 *.temp
+
+# Generated build files
+version_info.txt
