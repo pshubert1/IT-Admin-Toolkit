@@ -1,10 +1,11 @@
 """
-Winget operations utilities.
+Winget operations utility.
 """
 
 import subprocess
-import sys
 import threading
+import sys
+import os
 import shutil
 
 
@@ -14,258 +15,271 @@ class WingetManager:
         self.winget_exe = self._find_winget()
     
     def _find_winget(self):
-        """Find the winget executable."""
-        found = shutil.which("winget")
+        """Find winget executable path."""
+        # Check common paths first
+        common_paths = [
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 
+                        'Microsoft', 'WindowsApps', 'winget.exe'),
+            os.path.join(os.environ.get('PROGRAMFILES', ''), 
+                        'WindowsApps', 'winget.exe'),
+        ]
+        
+        for path in common_paths:
+            if path and os.path.exists(path):
+                return path
+        
+        # Try shutil.which
+        found = shutil.which('winget')
         if found:
             return found
         
-        import os
-        import glob
-        common_paths = [
-            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps\winget.exe"),
-            r"C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*\winget.exe",
-        ]
-        for path in common_paths:
-            matches = glob.glob(path)
-            if matches:
-                return matches[0]
+        # Try running it directly
+        try:
+            result = subprocess.run(
+                ['where', 'winget'], 
+                capture_output=True, text=True, timeout=10,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip().split('\n')[0].strip()
+        except:
+            pass
         
-        return "winget"
+        return None
     
-    def check(self):
-        """Check if winget is available."""
-        def _check():
+    def _ensure_winget(self):
+        """Verify winget is available, return True/False."""
+        if self.winget_exe and os.path.exists(self.winget_exe):
+            return True
+        
+        # Try finding it again
+        self.winget_exe = self._find_winget()
+        if self.winget_exe:
+            return True
+        
+        self.app.root.after(0, lambda: self.app.log_error(
+            "winget not found",
+            hint="Install 'App Installer' from the Microsoft Store"
+        ))
+        return False
+    
+    def search(self, query, callback=None):
+        """Search winget repository."""
+        def _do_search():
+            if not self._ensure_winget():
+                return
+            
+            self.app.root.after(0, lambda: self.app.log(f"🔍 Searching winget for '{query}'..."))
+            
             try:
                 result = subprocess.run(
-                    [self.winget_exe, "--version"], 
-                    capture_output=True, text=True, timeout=10,
-                    creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+                    [self.winget_exe, "search", query,
+                     "--source", "winget",
+                     "--accept-source-agreements"],
+                    capture_output=True, text=True, timeout=30,
+                    creationflags=subprocess.CREATE_NO_WINDOW
                 )
-                if result.returncode == 0:
-                    version = result.stdout.strip()
-                    self.app.root.after(0, lambda: self.app.log_success(f"winget {version}"))
-                else:
-                    self.app.root.after(0, lambda: self.app.log_error("winget not responding",
-                        hint="Try running 'winget --version' in PowerShell"))
-            except FileNotFoundError:
-                self.app.root.after(0, lambda: self.app.log_error("winget not found",
-                    hint="Install 'App Installer' from Microsoft Store"))
-            except Exception as e:
-                self.app.root.after(0, lambda: self.app.log_error(f"winget error: {str(e)}"))
-        
-        threading.Thread(target=_check, daemon=True).start()
-    
-    def search(self, query):
-        """Search winget repository."""
-        if not query or not query.strip():
-            self.app.log_warning("Enter search term first")
-            return
-        
-        self.app.installer_tab.results_listbox.delete(0, 'end')
-        threading.Thread(target=self._do_search, args=(query.strip(),), daemon=True).start()
-    
-    def _do_search(self, query):
-        """Perform the actual search (runs in thread)."""
-        try:
-            self.app.root.after(0, lambda: self.app.log(f"🔍 Searching winget for '{query}'..."))
-            result = subprocess.run(
-            [self.winget_exe, "search", query,
-                            "--source", "winget",
-                            "--accept-source-agreements"],
-                capture_output=True, text=True, timeout=30,
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
-            )
-            
-            if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
-                data_lines = []
-                for i, line in enumerate(lines):
+                
+                output = result.stdout or ""
+                lines = output.strip().split('\n')
+                
+                # Parse results - find the header line with dashes
+                results = []
+                data_started = False
+                
+                for line in lines:
                     if '---' in line:
-                        data_lines = lines[i+1:]
-                        break
-                self.app.root.after(0, lambda: self._populate_results(data_lines))
-            else:
-                error = result.stderr.strip() or result.stdout.strip() or "Unknown error"
-                self.app.root.after(0, lambda: self.app.log_error(f"Search failed: {error[:200]}",
-                    hint="Check internet connection or try a different search term"))
-        except subprocess.TimeoutExpired:
-            self.app.root.after(0, lambda: self.app.log_error("Search timed out",
-                hint="Check internet connection and try again"))
-        except FileNotFoundError:
-            self.app.root.after(0, lambda: self.app.log_error("winget not found",
-                hint="Install 'App Installer' from Microsoft Store"))
-        except Exception as e:
-            self.app.root.after(0, lambda: self.app.log_error(f"Search error: {str(e)}"))
-    
-    def _populate_results(self, lines):
-        """Populate the results listbox."""
-        listbox = self.app.installer_tab.results_listbox
-        listbox.delete(0, 'end')
-        for line in lines:
-            if line.strip():
-                listbox.insert('end', line.strip())
-        count = listbox.size()
-        self.app.log_success(f"Found {count} results")
-    
-    def install_apps(self, selected, checkboxes, install_btn, progress):
-        """Install selected apps."""
-        thread = threading.Thread(
-            target=self._do_install, 
-            args=(selected, checkboxes, install_btn, progress), 
-            daemon=True
-        )
-        thread.start()
-    
-    def _do_install(self, selected, checkboxes, install_btn, progress):
-        """Perform the actual installation (runs in thread)."""
-        self.app.root.after(0, lambda: install_btn.config(state='disabled'))
-        self.app.root.after(0, progress.start)
-        self.app.root.after(0, lambda: self.app.log(f"🚀 Starting {len(selected)} installs..."))
+                        data_started = True
+                        continue
+                    if data_started and line.strip():
+                        results.append(line.strip())
+                
+                if results:
+                    self.app.root.after(0, lambda: self.app.log_success(f"Found {len(results)} results"))
+                else:
+                    self.app.root.after(0, lambda: self.app.log_warning(f"No results for '{query}'"))
+                
+                if callback:
+                    self.app.root.after(0, lambda: callback(results))
+                    
+            except subprocess.TimeoutExpired:
+                self.app.root.after(0, lambda: self.app.log_error(
+                    "Search timed out",
+                    hint="Try a more specific search term"
+                ))
+            except Exception as e:
+                self.app.root.after(0, lambda: self.app.log_error(f"Search error: {str(e)}"))
         
-        for app_name in selected:
-            _, winget_id = checkboxes[app_name]
-            self.app.root.after(0, lambda n=app_name: self.app.log(f"📥 Installing {n}..."))
+        threading.Thread(target=_do_search, daemon=True).start()
+    
+    def install_apps(self, apps_list, progress_callback=None, complete_callback=None):
+        """Install a list of apps via winget."""
+        def _do_installs():
+            total = len(apps_list)
+            self.app.root.after(0, lambda: self.app.log(f"🚀 Starting {total} installs..."))
             
-            attempts = [
-                     {
-                    "label": "silent",
-                    "cmd": [
-                        self.winget_exe, "install", "-e", "--id", winget_id,
-                        "--source", "winget",
-                        "--silent", "--accept-package-agreements", 
-                        "--accept-source-agreements", "--disable-interactivity"
-                    ]
-                },
-                {
-                    "label": "interactive",
-                    "cmd": [
-                        self.winget_exe, "install", "-e", "--id", winget_id,
-                        "--source", "winget",
-                        "--accept-package-agreements", "--accept-source-agreements"
-                    ]
-                }
-            ]
+            if not self._ensure_winget():
+                if complete_callback:
+                    self.app.root.after(0, complete_callback)
+                return
             
-            
-            installed = False
-            
-            for attempt in attempts:
-                cmd = attempt["cmd"]
-                label = attempt["label"]
+            for i, (name, winget_id) in enumerate(apps_list):
+                self.app.root.after(0, lambda n=name: self.app.log(f"📥 Installing {n}..."))
                 
-                if self.app.debug_mode.get():
-                    self.app.root.after(0, lambda c=cmd: self.app.debug_log(f"CMD: {' '.join(c)}"))
+                if progress_callback:
+                    self.app.root.after(0, lambda idx=i, t=total: progress_callback(idx, t))
                 
-                try:
-                    process = subprocess.Popen(
-                        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                        universal_newlines=True, bufsize=1,
-                        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
-                    )
-                    
-                    output_lines = []
-                    for line in process.stdout:
-                        stripped = line.strip()
-                        if stripped:
-                            output_lines.append(stripped)
-                            if self.app.debug_mode.get():
-                                self.app.root.after(0, lambda l=stripped: self.app.debug_log(f"  {l}"))
-                    
-                    process.wait(timeout=300)
-                    exit_code = process.returncode
-                    
-                    # Log output on failure
-                    if exit_code not in [0, 3010, -1978335189, 2316632107]:
-                        output_text = '\n'.join(output_lines[-10:])
-                        self.app.root.after(0, lambda o=output_text, l=label: 
-                            self.app.debug_log(f"[{l}] OUTPUT:\n{o}"))
-                    
-                    # Success
-                    if exit_code in [0, 3010]:
-                        reboot = " (reboot needed)" if exit_code == 3010 else ""
-                        self.app.root.after(0, lambda n=app_name, r=reboot: 
-                            self.app.log_success(f"{n} installed{r}"))
-                        installed = True
-                        break
-                    
-                    # Already installed
-                    elif exit_code in [-1978335189, 2316632107]:
-                        self.app.root.after(0, lambda n=app_name: 
-                            self.app.log_success(f"{n} already installed"))
-                        installed = True
-                        break
-                    
-                    # Not found
-                    elif exit_code in [-1978335215, 2316632081]:
-                        self.app.root.after(0, lambda n=app_name, wid=winget_id: 
-                            self.app.log_error(f"{n} - not found in repository",
-                                hint=f"Verify winget ID: {wid}"))
-                        installed = True
-                        break
-                    
-                    # No applicable installer
-                    elif exit_code in [-1978335212, 2316632084]:
-                        if label == "silent":
-                            self.app.root.after(0, lambda n=app_name: 
-                                self.app.log_warning(f"{n} - silent failed, trying interactive..."))
-                            continue
-                        else:
-                            self.app.root.after(0, lambda n=app_name, wid=winget_id: 
-                                self.app.log_error(f"{n} - no installer for this system",
-                                    hint=f"ID '{wid}' may not support this OS/architecture"))
-                            installed = True
-                            break
-                    
-                    # Update available
-                    elif exit_code in [-1978335188, 2316632108]:
-                        self.app.root.after(0, lambda n=app_name: 
-                            self.app.log(f"⬆️ {n} - already installed, newer version available"))
-                        installed = True
-                        break
-                    
-                    # Download failed
-                    elif exit_code in [-1978335192, 2316632104]:
-                        self.app.root.after(0, lambda n=app_name: 
-                            self.app.log_error(f"{n} - download failed",
-                                hint="Check internet connection"))
-                        installed = True
-                        break
-                    
+                success = self._do_install(name, winget_id)
+                
+                if not success:
+                    self.app.root.after(0, lambda n=name: self.app.debug_log(f"Failed: {n}"))
+            
+            self.app.root.after(0, lambda: self.app.log("🎉 All installations complete!"))
+            
+            if complete_callback:
+                self.app.root.after(0, complete_callback)
+        
+        threading.Thread(target=_do_installs, daemon=True).start()
+    
+    def _do_install(self, name, winget_id):
+        """Install a single app. Returns True on success."""
+        
+        attempts = [
+            {
+                "label": "silent",
+                "cmd": [
+                    self.winget_exe, "install", "-e", "--id", winget_id,
+                    "--source", "winget",
+                    "--silent", "--accept-package-agreements", 
+                    "--accept-source-agreements", "--disable-interactivity"
+                ]
+            },
+            {
+                "label": "interactive",
+                "cmd": [
+                    self.winget_exe, "install", "-e", "--id", winget_id,
+                    "--source", "winget",
+                    "--accept-package-agreements", "--accept-source-agreements"
+                ]
+            }
+        ]
+        
+        for attempt in attempts:
+            label = attempt["label"]
+            cmd = attempt["cmd"]
+            
+            # Debug log the command
+            self.app.root.after(0, lambda c=' '.join(cmd): self.app.debug_log(f"CMD: {c}"))
+            
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True, text=True, timeout=300,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                
+                output = (result.stdout or "") + (result.stderr or "")
+                code = result.returncode
+                
+                # Debug log output
+                self.app.root.after(0, lambda o=output, l=label: self.app.debug_log(
+                    f"[{l}] OUTPUT:\n{o[-500:]}" if len(o) > 500 else f"[{l}] OUTPUT:\n{o}"
+                ))
+                
+                # Success
+                if code == 0:
+                    self.app.root.after(0, lambda n=name: self.app.log_success(f"{n} installed"))
+                    return True
+                
+                # Already installed
+                if code == -1978335189:  # 0x8A150019
+                    self.app.root.after(0, lambda n=name: self.app.log_success(f"{n} already installed"))
+                    return True
+                
+                # Reboot required but installed
+                if code == 3010:
+                    self.app.root.after(0, lambda n=name: self.app.log_success(f"{n} installed (reboot needed)"))
+                    return True
+                
+                # Upgrade available (already installed)
+                if code == -1978335175:  # 0x8A150029
+                    self.app.root.after(0, lambda n=name: self.app.log(f"⬆️ {n} - already installed, newer version available"))
+                    return True
+                
+                # Not found in repo
+                if code == -1978335212:  # 0x8A150004
+                    self.app.root.after(0, lambda n=name, w=winget_id: self.app.log_error(
+                        f"{n} - not found in repository",
+                        hint=f"Verify winget ID: {w}"
+                    ))
+                    return False
+                
+                # No applicable installer
+                if code == -1978335196:  # 0x8A150014
+                    self.app.root.after(0, lambda n=name, w=winget_id: self.app.log_error(
+                        f"{n} - no installer for this system",
+                        hint=f"ID '{w}' may not support this OS/architecture"
+                    ))
+                    return False
+                
+                # Download failed
+                if code == -1978335164:  # 0x8A150034
+                    self.app.root.after(0, lambda n=name: self.app.log_error(
+                        f"{n} - download failed",
+                        hint="Check internet connection"
+                    ))
+                    return False
+                
+                # Source agreement / certificate error
+                if code == -1978335138 or code == 2316632158:  # 0x8A15005E
+                    if label == "silent":
+                        self.app.root.after(0, lambda n=name: self.app.log_warning(
+                            f"{n} - msstore certificate error on silent, retrying with --source winget..."
+                        ))
+                        continue
                     else:
-                        if label == "silent":
-                            self.app.root.after(0, lambda n=app_name, c=exit_code: 
-                                self.app.log_warning(f"{n} - silent failed (code {c}), retrying..."))
-                            continue
-                        else:
-                            self.app.root.after(0, lambda n=app_name, c=exit_code: 
-                                self.app.log_error(f"{n} failed (code {c})",
-                                    hint="Try installing manually with winget or use Chocolatey"))
-                            installed = True
-                            break
-                    
-                except subprocess.TimeoutExpired:
-                    self.app.root.after(0, lambda n=app_name: 
-                        self.app.log_error(f"{n} timed out after 300s",
-                            hint="Try installing manually or check internet speed"))
-                    installed = True
-                    break
-                except FileNotFoundError:
-                    self.app.root.after(0, lambda: 
-                        self.app.log_error("winget not found",
-                            hint="Install 'App Installer' from Microsoft Store"))
-                    installed = True
-                    break
-                except Exception as e:
-                    self.app.root.after(0, lambda n=app_name, err=str(e): 
-                        self.app.log_error(f"{n} error: {err}"))
-                    installed = True
-                    break
-            
-            if not installed:
-                self.app.root.after(0, lambda n=app_name: 
-                    self.app.log_error(f"{n} - all install methods failed",
-                        hint="Try installing with Chocolatey instead"))
+                        self.app.root.after(0, lambda n=name: self.app.log_error(
+                            f"{n} - certificate/source error",
+                            hint="Try: winget source reset --force (as admin)"
+                        ))
+                        return False
+                
+                # Silent install failed with code 1 — retry interactive
+                if label == "silent" and code == 1:
+                    self.app.root.after(0, lambda n=name: self.app.log_warning(
+                        f"{n} - silent failed (code 1), retrying interactive..."
+                    ))
+                    continue
+                
+                # Silent failed with other code — retry interactive
+                if label == "silent":
+                    self.app.root.after(0, lambda n=name, c=code: self.app.log_warning(
+                        f"{n} - silent failed (code {c}), retrying interactive..."
+                    ))
+                    continue
+                
+                # Interactive also failed
+                self.app.root.after(0, lambda n=name, c=code: self.app.log_error(
+                    f"{n} failed (code {c})",
+                    hint="Try installing with Chocolatey instead"
+                ))
+                return False
+                
+            except subprocess.TimeoutExpired:
+                self.app.root.after(0, lambda n=name: self.app.log_error(
+                    f"{n} timed out after 300s",
+                    hint="Try installing manually or check internet speed"
+                ))
+                return False
+            except Exception as e:
+                self.app.root.after(0, lambda n=name, err=str(e): self.app.log_error(
+                    f"{n} error: {err}"
+                ))
+                return False
         
-        self.app.root.after(0, lambda: self.app.log("🎉 All installations complete!"))
-        self.app.root.after(0, progress.stop)
-        self.app.root.after(0, lambda: install_btn.config(state='normal'))
+        # All attempts exhausted
+        self.app.root.after(0, lambda n=name: self.app.log_error(
+            f"{n} - all install methods failed",
+            hint="Try installing with Chocolatey instead"
+        ))
+        return False
