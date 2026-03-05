@@ -62,6 +62,34 @@ class WingetManager:
             hint="Install 'App Installer' from the Microsoft Store"
         ))
         return False
+    def check(self):
+        """Check if winget is available and log the result."""
+        def _do_check():
+            if not self._ensure_winget():
+                return
+            
+            try:
+                result = subprocess.run(
+                    [self.winget_exe, "--version"],
+                    capture_output=True, text=True, timeout=10,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                
+                if result.returncode == 0:
+                    version = result.stdout.strip()
+                    self.app.root.after(0, lambda: self.app.log_success(f"Winget {version} is available"))
+                else:
+                    self.app.root.after(0, lambda: self.app.log_error(
+                        "Winget check failed",
+                        hint="Try reinstalling 'App Installer' from the Microsoft Store"
+                    ))
+                    
+            except subprocess.TimeoutExpired:
+                self.app.root.after(0, lambda: self.app.log_error("Winget check timed out"))
+            except Exception as e:
+                self.app.root.after(0, lambda: self.app.log_error(f"Winget check failed: {e}"))
+        
+        threading.Thread(target=_do_check, daemon=True).start()
     
     def search(self, query, callback=None):
         """Search winget repository."""
