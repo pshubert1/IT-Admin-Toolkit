@@ -69,8 +69,9 @@ class WingetManager:
         try:
             self.app.root.after(0, lambda: self.app.log(f"🔍 Searching winget for '{query}'..."))
             result = subprocess.run(
-                [self.winget_exe, "search", query, 
-                 "--accept-source-agreements"], 
+            [self.winget_exe, "search", query,
+                            "--source", "winget",
+                            "--accept-source-agreements"],
                 capture_output=True, text=True, timeout=30,
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
             )
@@ -126,10 +127,11 @@ class WingetManager:
             self.app.root.after(0, lambda n=app_name: self.app.log(f"📥 Installing {n}..."))
             
             attempts = [
-                {
+                     {
                     "label": "silent",
                     "cmd": [
                         self.winget_exe, "install", "-e", "--id", winget_id,
+                        "--source", "winget",
                         "--silent", "--accept-package-agreements", 
                         "--accept-source-agreements", "--disable-interactivity"
                     ]
@@ -138,10 +140,12 @@ class WingetManager:
                     "label": "interactive",
                     "cmd": [
                         self.winget_exe, "install", "-e", "--id", winget_id,
+                        "--source", "winget",
                         "--accept-package-agreements", "--accept-source-agreements"
                     ]
                 }
             ]
+            
             
             installed = False
             
