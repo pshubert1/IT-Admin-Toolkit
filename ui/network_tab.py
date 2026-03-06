@@ -6,6 +6,8 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 import subprocess
+import os
+from datetime import datetime, timedelta
 
 from utils.network_debug import NetworkDebugger
 
@@ -75,6 +77,18 @@ class NetworkTab:
         
         ttk.Button(row1, text="🏓 Ping", style='Success.TButton',
                   command=self._ping).pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.cping_start_btn = ttk.Button(row1, text="📡 CONTINUOUS PING", 
+                                         style='Dark.TButton',
+                                         command=self._start_continuous_ping)
+        self.cping_start_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.cping_stop_btn = ttk.Button(row1, text="⏹ STOP PING", 
+                                        style='Danger.TButton',
+                                        command=self._stop_continuous_ping, 
+                                        state='disabled')
+        self.cping_stop_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
         
         ttk.Button(row1, text="🔍 Traceroute", style='Dark.TButton',
                   command=self._traceroute).pack(side=tk.LEFT, padx=(0, 5))
@@ -269,6 +283,8 @@ class NetworkTab:
         
         threading.Thread(target=wrapper, daemon=True).start()
     
+    
+    
     # === TOOL COMMANDS ===
     
     def _ping(self):
@@ -453,3 +469,115 @@ class NetworkTab:
                 self.app.log_success(f"Saved to: {filepath}")
             except Exception as e:
                  self.app.log_error(f"Save failed: {e}")
+                 
+    def _start_continuous_ping(self):
+        """Start continuous ping using the IP/hostname entry."""
+        target = self.target_entry.get().strip()
+        if not target:
+            self.app.log_warning("Enter an IP or hostname first")
+            return
+        
+        if hasattr(self, '_cping_running') and self._cping_running:
+            self.app.log_warning("Ping monitor already running")
+            return
+        
+        self._cping_running = True
+        self._cping_sent = 0
+        self._cping_fail = 0
+        
+        # Setup log file
+        log_dir = os.path.join(os.environ.get('TEMP', r'C:\Temp'), 'ping_monitor')
+        os.makedirs(log_dir, exist_ok=True)
+        safe_target = target.replace(':', '-').replace('/', '-')
+        self._cping_log = os.path.join(log_dir, f"ping_{safe_target}.log")
+        
+        # Update buttons
+        self.cping_start_btn.config(state='disabled')
+        self.cping_stop_btn.config(state='normal')
+        
+        self.app.log(f"📡 Continuous ping started: {target}")
+        self.app.log(f"   Log: {self._cping_log}")
+        
+        self._cping_thread = threading.Thread(
+            target=self._cping_loop, args=(target,), daemon=True
+        )
+        self._cping_thread.start()
+    
+    def _stop_continuous_ping(self):
+        """Stop continuous ping."""
+        self._cping_running = False
+        self.cping_start_btn.config(state='normal')
+        self.cping_stop_btn.config(state='disabled')
+        
+        if self._cping_sent > 0:
+            loss = (self._cping_fail / self._cping_sent) * 100
+            self.app.log(f"📡 Ping stopped — Sent: {self._cping_sent}, "
+                        f"Failed: {self._cping_fail}, Loss: {loss:.1f}%")
+            self.app.log(f"   Failures logged to: {self._cping_log}")
+    
+    def _cping_loop(self, target):
+        """Background continuous ping loop."""
+        import time
+        
+        while self._cping_running:
+            try:
+                result = subprocess.run(
+                    ['ping', '-n', '1', '-w', '2000', target],
+                    capture_output=True, text=True, timeout=5,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                
+                output = result.stdout or ""
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self._cping_sent += 1
+                
+                if result.returncode == 0 and 'ttl=' in output.lower():
+                    # Success
+                    ms = ""
+                    if 'time=' in output.lower():
+                        try:
+                            ms = output.lower().split('time=')[1].split('ms')[0].strip()
+                            ms = f" ({ms}ms)"
+                        except:
+                            ms = ""
+                    
+                    self.app.root.after(0, lambda t=timestamp, m=ms: 
+                        self.app.log(f"✅ {target} OK{m}"))
+                else:
+                    # Failure — log to file
+                    self._cping_fail += 1
+                    
+                    reason = "TIMEOUT"
+                    if 'unreachable' in output.lower():
+                        reason = "UNREACHABLE"
+                    elif 'could not find host' in output.lower():
+                        reason = "DNS FAILED"
+                    
+                    self.app.root.after(0, lambda t=timestamp, r=reason:
+                        self.app.log_error(f"{target} — {r}"))
+                    
+                    # Write failure to log file
+                    try:
+                        with open(self._cping_log, 'a') as f:
+                            f.write(f"{timestamp} - {target} - {reason}\n")
+                            f.write(f"  {output.strip()}\n\n")
+                    except:
+                        pass
+                
+                # Clean old logs every 100 pings
+                if self._cping_sent % 100 == 0:
+                    try:
+                        cutoff = datetime.now() - timedelta(days=10)
+                        log_dir = os.path.dirname(self._cping_log)
+                        for f in os.listdir(log_dir):
+                            fp = os.path.join(log_dir, f)
+                            if os.path.isfile(fp) and datetime.fromtimestamp(os.path.getmtime(fp)) < cutoff:
+                                os.remove(fp)
+                    except:
+                        pass
+                        
+            except Exception as e:
+                self.app.root.after(0, lambda err=str(e):
+                    self.app.log_error(f"Ping error: {err}"))
+            
+            time.sleep(1)
