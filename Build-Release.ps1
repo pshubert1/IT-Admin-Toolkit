@@ -57,8 +57,12 @@ $VersionFile = Join-Path $ProjectDir "version.py"
 $DistDir = Join-Path $ProjectDir "dist"
 $ExeName = "IT-Admin-Toolkit.exe"
 $ExePath = Join-Path $DistDir $ExeName
-$RepoOwner = "pshubert1"
-$RepoName = "Install_Apps"
+$ReleaseDir = Join-Path $ProjectDir "release"
+
+# GitHub repos
+$PrivateRepo = "pshubert1/Install_Apps"          # Code pushes here
+$PublicRepo  = "pshubert1/IT-Admin-Toolkit"       # EXE releases go here
+
 $BackupScript = Join-Path $ProjectDir "Backup_App.ps1"
 
 # ============================================================
@@ -375,7 +379,7 @@ if ($SkipRelease) {
                 Write-Host "   📋 Tag v$newVersion was still pushed" -ForegroundColor Gray
                 Write-Host ""
                 Write-Host "   Create release manually at:" -ForegroundColor Gray
-                Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/new?tag=v$newVersion" -ForegroundColor Cyan
+                Write-Host "  https://github.com/$PublicRepo/releases/new?tag=v$newVersion" -ForegroundColor Cyan
                 
                 # Skip to summary
                 $SkipRelease = $true
@@ -418,7 +422,7 @@ if ($SkipRelease) {
         $releaseArgs = @(
             "release", "create", "v$newVersion"
             $releasePath
-            "--repo", "$RepoOwner/$RepoName"
+            "--repo", $PublicRepo
             "--title", "v$newVersion"
             "--notes", $Notes
         )
@@ -432,11 +436,11 @@ if ($SkipRelease) {
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host "   ✅ GitHub Release created!" -ForegroundColor Green
-            Write-Host "   🔗 https://github.com/$RepoOwner/$RepoName/releases/tag/v$newVersion" -ForegroundColor Cyan
+            Write-Host "   🔗 https://github.com/$PublicRepo/releases/new?tag=v$newVersion" -ForegroundColor Cyan
         } else {
             Write-Host "   ❌ Release creation failed" -ForegroundColor Red
             Write-Host "   Create manually at:" -ForegroundColor Gray
-            Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/new?tag=v$newVersion" -ForegroundColor Cyan
+            Write-Host "   https://github.com/$PublicRepo/releases/new?tag=v$newVersion" -ForegroundColor Cyan
         }
     }
 }
@@ -453,7 +457,7 @@ Write-Host "   EXE:      $ExePath" -ForegroundColor White
 Write-Host "   Size:     $([math]::Round($exeSize, 1)) MB" -ForegroundColor White
 Write-Host "   Tag:      v$newVersion" -ForegroundColor White
 if (-not $SkipRelease) {
-    Write-Host "   Release:  https://github.com/$RepoOwner/$RepoName/releases/tag/v$newVersion" -ForegroundColor Cyan
+    Write-Host "   Release:  🔗 https://github.com/$PublicRepo/releases/tag/v$newVersion" -ForegroundColor Cyan
 }
 Write-Host ""
 
