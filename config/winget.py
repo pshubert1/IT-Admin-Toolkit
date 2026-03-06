@@ -47,7 +47,7 @@ UTILITIES = [
 ]
 
 TROUBLESHOOTING = [
-    ("Wireshark", "Wireshark.Wireshark"),
+    ('Wireshark', 'WiresharkFoundation.Wireshark'),
     ("Sysinternals Suite", "Microsoft.SysinternalsSuite"),
     ("Process Explorer", "Microsoft.SysinternalsProcessExplorer"),
     # ("HWiNFO", "REALiX.HWiNFO"),
