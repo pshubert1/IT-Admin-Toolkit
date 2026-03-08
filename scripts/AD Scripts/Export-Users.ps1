@@ -1,6 +1,7 @@
 # NAME: User Export to CSV
 # DESCRIPTION: Export a list of users for given OU to CSV
 # STYLE: Dark.TButton
+# INTERACTIVE: true
 
 $OU = Read-Host "Enter the OU path (e.g., OU=Users,DC=domain,DC=com)"
 $ExportPath = "C:\ExportedUsers.csv"

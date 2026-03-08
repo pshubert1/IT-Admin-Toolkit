@@ -2,7 +2,7 @@
 # DESCRIPTION: Checks for AD replication issues
 # STYLE: Dark.TButton
 
-# 
+<# 
     AD Replication Health Check
     - Run on any DC with RSAT/AD module
     - Auto-detects domain and DCs

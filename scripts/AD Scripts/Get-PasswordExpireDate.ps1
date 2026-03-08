@@ -1,9 +1,10 @@
 # NAME: Password Expiration
 # DESCRIPTION: Show password expiration for user in a given OU
 # STYLE: Dark.TButton
+# INTERACTIVE: true
 Import-Module ActiveDirectory
  
-$ou = Read-Host "Enter the OU path (e.g., OU=Users,DC=domain,DC=com)""
+$ou = Read-Host "Enter the OU path (e.g., OU=Users,DC=domain,DC=com)"
 $now = Get-Date
 $users = Get-ADUser -SearchBase $ou -SearchScope Subtree `
    -Filter * `
@@ -73,10 +74,4 @@ $color  = 'DarkRed'
        }
    }
  
-   Write-Host ("{0,-30} {1,-20} {2,-10} {3,-20} {4,-25}" -f `
-       $u.DisplayName,
-       $u.SamAccountName,
-       $u.Enabled,
-       $u.PasswordNeverExpires,
-       $expText) -ForegroundColor $color
-}
+   Write-Host ("{0,-30} {1,-20} {2,-10} {3,-20} {4,-25}" -f ` $u.DisplayName, $u.SamAccountName, $u.Enabled, $u.PasswordNeverExpires, $expText) -ForegroundColor $color }
