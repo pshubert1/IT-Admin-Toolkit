@@ -7,6 +7,7 @@ from tkinter import ttk, filedialog
 import os
 from config.scripts import get_script_sections
 from utils.network import NetworkDiagnostics
+from utils.profile_remover import open_profile_remover
 
 
 class ScriptsTab:
@@ -61,7 +62,7 @@ class ScriptsTab:
         self.script_progress.grid(row=1, column=0, sticky='ew', padx=5, pady=5)
     
     def _create_script_buttons(self):
-        """Create all the script section buttons — merged built-in + folder scripts."""
+        """Create all the script section buttons - merged built-in + folder scripts."""
         script_sections = get_script_sections()
         
         for section_title, scripts in script_sections:
@@ -95,6 +96,22 @@ class ScriptsTab:
                 desc_label = ttk.Label(script_row, text=desc_text, style='DarkFrame.TLabel',
                                       font=('Segoe UI', 9))
                 desc_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            
+            # ── Add Profile Remover to Admin Tasks section ──
+            if "Admin Task" in section_title:
+                tool_row = ttk.Frame(section_frame, style='Dark.TFrame')
+                tool_row.pack(fill=tk.X, pady=4)
+                
+                ttk.Button(
+                    tool_row, text="👤 Profile Remover",
+                    style='Dark.TButton', width=35,
+                    command=lambda: open_profile_remover(self.app.root, self.app)
+                ).pack(side=tk.LEFT, padx=(0, 10))
+                
+                ttk.Label(tool_row, text="Remove Windows user profiles",
+                         style='DarkFrame.TLabel', font=('Segoe UI', 9)
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
     
     def _create_custom_section(self):
         """Create the custom script input section."""
