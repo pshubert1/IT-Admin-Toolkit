@@ -42,11 +42,7 @@ class AppInstaller:
         self.root.resizable(True, True)
         
         # Set window icon
-        try:
-            icon_path = resource_path('icon.ico')
-            self.root.iconbitmap(icon_path)
-        except:
-            pass
+        self._set_icon()
         
         # Check admin status
         self.admin_status = self.is_admin()
@@ -278,6 +274,43 @@ class AppInstaller:
             self.debug_text.insert(tk.END, f"[{timestamp}] {message}\n")
             self.debug_text.see(tk.END)
             self.root.update_idletasks()
+            
+    def _set_icon(self):
+        """Set window icon for titlebar AND taskbar."""
+        icon_path = resource_path('icon.ico')
+        
+        # Method 1: iconbitmap (titlebar)
+        try:
+            self.root.iconbitmap(icon_path)
+        except:
+            pass
+        
+        # Method 2: wm_iconphoto (taskbar) — needs PhotoImage
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(icon_path)
+            # Create multiple sizes for best quality
+            photos = []
+            for size in [16, 32, 48, 64, 128, 256]:
+                resized = img.resize((size, size), Image.LANCZOS)
+                photo = ImageTk.PhotoImage(resized)
+                photos.append(photo)
+            
+            self.root.wm_iconphoto(True, *photos)
+            self._icon_refs = photos  # Prevent garbage collection
+        except ImportError:
+            # Pillow not installed — try with tkinter's built-in PhotoImage
+            try:
+                # Only works with .png or .gif, so try .png first
+                png_path = icon_path.replace('.ico', '.png')
+                if os.path.exists(png_path):
+                    photo = tk.PhotoImage(file=png_path)
+                    self.root.wm_iconphoto(True, photo)
+                    self._icon_ref = photo
+            except:
+                pass
+        except:
+            pass
     
     # ==========================================
     # Centralized Logging Methods
