@@ -66,7 +66,7 @@ Write-Host "  Setup Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Installed:" -ForegroundColor Cyan
-Write-Host "  - VS Code" -ForegroundColor White
+Write-Host "  - VS Code" -ForegroundColor Whiteabout:blank#blocked
 Write-Host "  - Python 3.12" -ForegroundColor White
 Write-Host "  - 7-Zip" -ForegroundColor White
 Write-Host "  - Git" -ForegroundColor White
