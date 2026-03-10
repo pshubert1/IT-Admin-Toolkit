@@ -21,8 +21,8 @@ BROWSERS = [
     ("Chrome", "Google.Chrome"),
     ("Edge", "Microsoft.Edge"),
     ("FireFox", "Mozilla.Firefox.ESR"),
-    # ("Brave", "Brave.Brave"),
-    # ("Opera", "Opera.Opera"),
+    ("Brave", "Brave.Brave"),
+   
 ]
 
 MSP_ADMIN = [
@@ -42,16 +42,16 @@ UTILITIES = [
     ("Advanced IP Scanner", "Famatech.AdvancedIPScanner"),
     ("TreeSize Free", "JAMSoftware.TreeSize.Free"),
     ("VLC", "VideoLAN.VLC"),
-    # ("Notepad++", "Notepad++.Notepad++"),
-    # ("WinSCP", "WinSCP.WinSCP"),
+    ("Notepad++", "Notepad++.Notepad++"),
+    ("WinSCP", "WinSCP.WinSCP"),
 ]
 
 TROUBLESHOOTING = [
     ('Wireshark', 'WiresharkFoundation.Wireshark'),
     ("Sysinternals Suite", "Microsoft.SysinternalsSuite"),
     ("Process Explorer", "Microsoft.SysinternalsProcessExplorer"),
-    # ("HWiNFO", "REALiX.HWiNFO"),
-    # ("CPU-Z", "CPUID.CPU-Z"),
+    ("HWiNFO", "REALiX.HWiNFO"),
+    ("CPU-Z", "CPUID.CPU-Z"),
 ]
 
 BUSINESS = [

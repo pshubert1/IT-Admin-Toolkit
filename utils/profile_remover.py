@@ -8,6 +8,7 @@ import shutil
 import tkinter as tk
 from tkinter import messagebox
 import winreg
+import subprocess
 
 USERS_DIR = r"C:\Users"
 
@@ -106,19 +107,54 @@ class ProfileRemoverWindow:
         if self.app and hasattr(self.app, 'log'):
             self.app.log(msg)
     
-    def sid_to_account(self, sid):
-        """Convert SID to username via registry."""
+
+    def sid_to_account(self, sid_str):
+        r"""Get DOMAIN\username or COMPUTER\username from SID"""
+        # Quick SID parse to detect domain vs local
+        parts = sid_str.split('-')
+        if len(parts) >= 5 and parts[3] == '21':  # S-1-5-21 = Domain SID
+            # Domain account - try WMI (domain-aware)
+            try:
+                result = subprocess.run([
+                    'wmic', 'useraccount', 'where', f"SID='{sid_str}'", 
+                    'get', 'Name,Domain', '/value'
+                ], capture_output=True, text=True, encoding='utf-8', timeout=5)
+                
+                lines = [line.strip() for line in result.stdout.split('\n') if '=' in line]
+                name, domain = None, None
+                
+                for line in lines:
+                    if line.startswith('Name='):
+                        name = line.split('=', 1)[1].strip()
+                    elif line.startswith('Domain='):
+                        domain = line.split('=', 1)[1].strip()
+                        
+                if name and domain:
+                    return f"{domain}\\{name}"
+            except:
+                pass
+        
+        # Fallback: Local lookup or folder name
         try:
-            reg_path = rf"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\{sid}"
+            reg_path = rf"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\{sid_str}"
             key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path)
             profile_path, _ = winreg.QueryValueEx(key, "ProfileImagePath")
             winreg.CloseKey(key)
-            
             username = os.path.basename(profile_path)
-            computer = os.environ.get('COMPUTERNAME', 'PC')
-            return f"{computer}\\{username}"
+            
+            # For local accounts, get computer name from SID domain part
+            if len(parts) >= 5 and parts[3] == '21':
+                # Try to get domain name from environment
+                domain = os.environ.get('USERDOMAIN', os.environ.get('COMPUTERNAME', 'PC'))
+                return f"{domain}\\{username}"
+            else:
+                return f"{os.environ.get('COMPUTERNAME', 'PC')}\\{username}"
+                
         except:
-            return None
+            return "Unknown User"
+        
+        
+        ######
 
     def get_profile_info(self):
         """Get user profiles from registry."""
@@ -151,6 +187,7 @@ class ProfileRemoverWindow:
                             
                             display = self.sid_to_account(subkey_name) or folder
                             is_current = folder.lower() == current_user
+                            print(f"SID: {subkey_name} -> Display: '{display}'")
                             
                             profiles[folder] = {
                                 'path': profile_path,
