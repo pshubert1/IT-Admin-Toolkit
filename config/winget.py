@@ -44,6 +44,8 @@ UTILITIES = [
     ("VLC", "VideoLAN.VLC"),
     ("Notepad++", "Notepad++.Notepad++"),
     ("WinSCP", "WinSCP.WinSCP"),
+    ("Dell Command Update", "Dell.CommandUpdate"),
+    ("Lenovo System Update", "Lenovo.SystemUpdate"),
 ]
 
 TROUBLESHOOTING = [
@@ -65,8 +67,7 @@ BUSINESS = [
 EXTRAS = [
     ("ShareX", "ShareX.ShareX"),
     ("Obsidian", "Obsidian.Obsidian"),
-    # ("VS Code", "Microsoft.VisualStudioCode"),
-    # ("Git", "Git.Git"),
+
 ]
 
 

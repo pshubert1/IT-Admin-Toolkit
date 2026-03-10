@@ -73,6 +73,9 @@ class ChocoTab:
         ttk.Button(btn_row, text="📥 INSTALL CHOCO", style='Warning.TButton',
                   command=self._install_choco).pack(side=tk.LEFT, padx=(0, 10))
         
+        ttk.Button(btn_row, text="🗑️ UNINSTALL CHOCO", style='Danger.TButton',
+          command=self._uninstall_choco).pack(side=tk.LEFT, padx=(5, 0))
+        
         ttk.Label(btn_row, text="Search:", style='DarkFrame.TLabel').pack(side=tk.LEFT, padx=(20, 5))
         
         self.search_entry = ttk.Entry(btn_row, font=('Segoe UI', 10), width=30)
@@ -412,3 +415,106 @@ $count = ($packages | Measure-Object -Line).Lines - 1
 Write-Host "Total packages installed: $count" -ForegroundColor Green"""
         
         self.app.powershell.run(script, "List Installed Packages")
+        
+    
+def _uninstall_choco(self):
+    """Uninstall Chocolatey infrastructure only (leaves packages intact)."""
+    from tkinter import messagebox
+    
+    confirm = messagebox.askyesno(
+        "⚠️ Remove Chocolatey Only",
+        "This will:\n"
+        "• Remove C:\\ProgramData\\chocolatey\n"
+        "• Clean Chocolatey PATH & env vars\n"
+        "• **LEAVE all installed packages intact**\n\n"
+        "Continue?",
+    )
+    if not confirm:
+        return
+
+    self.app.log("🍫 Removing Chocolatey infrastructure...")
+    
+    script = r'''
+$ErrorActionPreference = "Continue"
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  REMOVE CHOCOLATEY INFRASTRUCTURE ONLY" -ForegroundColor Cyan
+Write-Host "  (Packages will remain installed)" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+
+# 1. Remove main Chocolatey directory (but NOT lib folder with packages)
+Write-Host "🗑️ Removing Chocolatey core folders..." -ForegroundColor Yellow
+$chocoDir = "$env:ProgramData\chocolatey"
+$protectedFolders = @('lib')  # Don't touch installed packages
+
+if (Test-Path $chocoDir) {
+    Get-ChildItem -Path $chocoDir -Directory | ForEach-Object {
+        if ($protectedFolders -notcontains $_.Name) {
+            Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "  Removed: $($_.Name)" -ForegroundColor Green
+        } else {
+            Write-Host "  ⚠️  Protected: $($_.Name) (packages remain)" -ForegroundColor Yellow
+        }
+    }
+    # Remove empty root if no packages left
+    if (-not (Get-ChildItem -Path $chocoDir -Directory)) {
+        Remove-Item -Path $chocoDir -Force -ErrorAction SilentlyContinue
+        Write-Host "✅ Removed empty $chocoDir" -ForegroundColor Green
+    }
+} else {
+    Write-Host "ℹ️ Chocolatey directory not found" -ForegroundColor Gray
+}
+Write-Host ""
+
+# 2. Clean ALL Chocolatey environment variables
+Write-Host "🧹 Cleaning environment variables..." -ForegroundColor Yellow
+$envVars = @('ChocolateyInstall', 'ChocolateyLastPathUpdate', 'ChocolateyToolsLocation')
+foreach ($var in $envVars) {
+    [Environment]::SetEnvironmentVariable($var, $null, "Machine")
+    [Environment]::SetEnvironmentVariable($var, $null, "User")
+    Write-Host "  Removed: $var" -ForegroundColor Green
+}
+Write-Host ""
+
+# 3. Clean PATH entries (Machine + User)
+Write-Host "🧹 Cleaning PATH entries..." -ForegroundColor Yellow
+$scopes = @("Machine", "User")
+foreach ($scope in $scopes) {
+    $path = [Environment]::GetEnvironmentVariable("Path", $scope)
+    if ($path -and $path -match 'chocolatey') {
+        $oldCount = ($path -split ';' | Where-Object { $_ -match 'chocolatey' }).Count
+        $cleanPath = ($path -split ';' | Where-Object { $_ -notmatch 'chocolatey' -and $_ -ne '' }) -join ';'
+        [Environment]::SetEnvironmentVariable("Path", $cleanPath, $scope)
+        Write-Host "  ✅ Cleaned PATH ($scope): removed ${oldCount} entries" -ForegroundColor Green
+    }
+}
+Write-Host ""
+
+# 4. Remove tools/shims if exist
+Write-Host "🗑️ Cleaning tools/shims + HTTP cache..." -ForegroundColor Yellow
+$toolsDir = [Environment]::GetEnvironmentVariable("ChocolateyToolsLocation", "Machine")
+$binDir = "$env:ProgramData\chocolatey\bin"
+$httpCacheDir = "$env:ProgramData\ChocolateyHttpCache"
+}
+# Remove tools directory (if not lib-related)
+if ($toolsDir -and (Test-Path $toolsDir) -and $toolsDir -notlike '*lib*') {
+    Remove-Item -Path $toolsDir -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "✅ Removed: $toolsDir" -ForegroundColor Green
+}
+# Remove HTTP cache (safe to delete)
+if (Test-Path $httpCacheDir) {
+    Remove-Item -Path $httpCacheDir -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "✅ Removed HTTP cache: $httpCacheDir" -ForegroundColor Green
+}
+
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Green
+Write-Host "  ✅ CHOCOLATEY INFRASTRUCTURE REMOVED!" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "ℹ️ Packages remain in C:\ProgramData\chocolatey\lib" -ForegroundColor Cyan
+Write-Host "ℹ️ Restart app or reboot for PATH changes" -ForegroundColor Cyan
+Write-Host "ℹ️ Run 'choco' to verify removal" -ForegroundColor Cyan
+'''
+    
+    self.app.powershell.run(script, "Remove Chocolatey Infrastructure", interactive=True)

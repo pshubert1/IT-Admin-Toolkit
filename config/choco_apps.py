@@ -33,6 +33,9 @@ def get_choco_sections():
             ("WinSCP", "winscp"),
             ("Everything Search", "everything"),
             ("PowerToys", "powertoys"),
+            ("Dell Command Updates", "dellcommandupdate"),
+            ("Lenovo System Update", "lenovo-thinkvantage-system-update"),
+            
         ]),
         
         ("👨‍💻 Development", [
