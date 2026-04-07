@@ -8,6 +8,7 @@ import os
 from config.scripts import get_script_sections
 from utils.network import NetworkDiagnostics
 from utils.profile_remover import open_profile_remover
+from utils.rmm_installer import open_rmm_installer
 
 
 class ScriptsTab:
@@ -111,7 +112,65 @@ class ScriptsTab:
                 ttk.Label(tool_row, text="Remove Windows user profiles",
                          style='DarkFrame.TLabel', font=('Segoe UI', 9)
                 ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+                if "Admin Task" in section_title:
+                # Profile Remover
+                    tool_row = ttk.Frame(section_frame, style='Dark.TFrame')
+                    tool_row.pack(fill=tk.X, pady=4)
                 
+                ttk.Button(
+                    tool_row, text="👤 Profile Remover",
+                    style='Dark.TButton', width=35,
+                    command=lambda: open_profile_remover(self.app.root, self.app)
+                ).pack(side=tk.LEFT, padx=(0, 10))
+                
+                ttk.Label(tool_row, text="Remove Windows user profiles",
+                         style='DarkFrame.TLabel', font=('Segoe UI', 9)
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
+                # RMM Installer
+                rmm_row = ttk.Frame(section_frame, style='Dark.TFrame')
+                rmm_row.pack(fill=tk.X, pady=4)
+                
+                ttk.Button(
+                    rmm_row, text="📥 RMM Agent Installer",
+                    style='Dark.TButton', width=35,
+                    command=lambda: open_rmm_installer(self.app.root, self.app)
+                ).pack(side=tk.LEFT, padx=(0, 10))
+                
+                ttk.Label(rmm_row, text="Download & install RMM agent from URL",
+                         style='DarkFrame.TLabel', font=('Segoe UI', 9)
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+    
+    
+                if "Admin Task" in section_title:
+                # Profile Remover
+                    tool_row = ttk.Frame(section_frame, style='Dark.TFrame')
+                    tool_row.pack(fill=tk.X, pady=4)
+                
+                ttk.Button(
+                    tool_row, text="👤 Profile Remover",
+                    style='Dark.TButton', width=35,
+                    command=lambda: open_profile_remover(self.app.root, self.app)
+                ).pack(side=tk.LEFT, padx=(0, 10))
+                
+                ttk.Label(tool_row, text="Remove Windows user profiles",
+                         style='DarkFrame.TLabel', font=('Segoe UI', 9)
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
+                # RMM Installer
+                rmm_row = ttk.Frame(section_frame, style='Dark.TFrame')
+                rmm_row.pack(fill=tk.X, pady=4)
+                
+                ttk.Button(
+                    rmm_row, text="📥 RMM Agent Installer",
+                    style='Dark.TButton', width=35,
+                    command=lambda: open_rmm_installer(self.app.root, self.app)
+                ).pack(side=tk.LEFT, padx=(0, 10))
+                
+                ttk.Label(rmm_row, text="Download & install RMM agent from URL",
+                         style='DarkFrame.TLabel', font=('Segoe UI', 9)
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+    
     
     def _create_custom_section(self):
         """Create the custom script input section."""
