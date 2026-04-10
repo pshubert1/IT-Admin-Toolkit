@@ -393,7 +393,7 @@ if ($SkipRelease) {
     
     if (-not $SkipRelease) {
         # Check if authenticated
-        $authStatus = gh auth status 2>&1
+        $null = gh auth status 2>&1
         if ($LASTEXITCODE -ne 0) {
             Write-Host "   ⚠️ Not authenticated. Running 'gh auth login'..." -ForegroundColor Yellow
             gh auth login
