@@ -58,7 +58,7 @@ def parse_script_metadata(filepath):
         style_match = re.search(r'^#\s*STYLE\s*:\s*(.+)$', content, re.MULTILINE | re.IGNORECASE)
         if style_match:
             style = style_match.group(1).strip()
-            valid_styles = ['Dark.TButton', 'Warning.TButton', 'Danger.TButton', 'Success.TButton']
+            valid_styles = ['Dark.TButton', 'Warning.TButton', 'Danger.TButton', 'Success.TButton', 'Info.TButton', 'Special.TButton']
             if style in valid_styles:
                 metadata['style'] = style
         
