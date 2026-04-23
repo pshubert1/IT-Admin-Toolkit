@@ -67,14 +67,7 @@ BUILTIN_SECTIONS = [
                 "Dark.TButton",
                 False
             ),
-            (
-                "💾 Axcient Full Backup",
-                r'$agentPath = "${env:ProgramFiles(x86)}\Axcient\x360Recover Agent"; '
-                r'& "$agentPath\x360recover-agent.exe" --full-backup',
-                "Starts a full Axcient D2C backup",
-                "Dark.TButton",
-                False
-            ),
+
         ]
     },
     {
@@ -91,6 +84,20 @@ BUILTIN_SECTIONS = [
         "name": "⚙️ Admin Tasks",
         "match_folders": ["Admin Task", "Admin Tasks"],
         "scripts": []
+    },
+        {
+        "name": "🔌 Agent Management",
+        "match_folders": ["Agent-Management"],
+        "scripts": [
+            (
+                "💾 Axcient Full Backup",
+                r'$agentPath = "${env:ProgramFiles(x86)}\Axcient\x360Recover Agent"; '
+                r'& "$agentPath\x360recover-agent.exe" --full-backup',
+                "Starts a full Axcient D2C backup",
+                "Dark.TButton",
+                False
+            ),
+        ]
     },
 ]
 
