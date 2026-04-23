@@ -1,6 +1,6 @@
 # NAME: 💾 Disk Space Report
 # DESCRIPTION: Shows disk usage for all drives
-# STYLE: Dark.TButton
+# STYLE: Info.TButton
 
 # === Script starts below ===
 Write-Host "Disk Space Report" -ForegroundColor Cyan

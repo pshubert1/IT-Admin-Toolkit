@@ -1,6 +1,6 @@
 # NAME: AD Replication Health Check
 # DESCRIPTION: Checks for AD replication issues
-# STYLE: Dark.TButton
+# STYLE: Info.TButton
 
 <# 
     AD Replication Health Check

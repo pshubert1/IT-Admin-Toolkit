@@ -1,6 +1,6 @@
 # NAME: 💽 Check Disk (chkdsk)
 # DESCRIPTION: Run chkdsk on selected drives with option to schedule on reboot
-# STYLE: Warning.TButton
+# STYLE: Special.TButton
 # INTERACTIVE: true
 
 # ============================================================

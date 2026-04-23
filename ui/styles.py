@@ -34,6 +34,12 @@ def setup_styles(colors):
     style.configure('Danger.TButton', background=colors['error'], foreground='white')
     style.map('Danger.TButton', background=[('active', '#c7352b')])
     
+    style.configure('Info.TButton', background='#17a2b8', foreground='white')
+    style.map('Info.TButton', background=[('active', '#138496')])
+    
+    style.configure('Special.TButton', background='#8e44ad', foreground='white')
+    style.map('Special.TButton', background=[('active', '#7d3c98')])
+    
     # Title style
     style.configure('Dark.Title.TLabel', font=('Segoe UI', 18, 'bold'), 
                    foreground=colors['accent'], background=colors['bg'])

@@ -1,6 +1,6 @@
 # NAME: Block Browser Notifations
 # DESCRIPTION: Blocks all Browser Notifications
-# STYLE: Warning.TButton
+# STYLE: Special.TButton
 
 
 # SYSTEM-WIDE: Block ALL browser notifications

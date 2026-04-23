@@ -1,6 +1,6 @@
 # NAME: 🔧 SFC & DISM Full Repair
 # DESCRIPTION: Runs all SFC and DISM repair/cleanup commands with logging to C:\Temp
-# STYLE: Warning.TButton
+# STYLE: Special.TButton
 # INTERACTIVE: true
 
 # ============================================================

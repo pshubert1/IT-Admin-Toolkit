@@ -1,6 +1,6 @@
 # NAME: 🌐 Set Static IP
 # DESCRIPTION: Configures a static IP address on a network adapter
-# STYLE: Danger.TButton
+# STYLE: Special.TButton
 # INTERACTIVE: true
 
 Write-Host "================================" -ForegroundColor Cyan

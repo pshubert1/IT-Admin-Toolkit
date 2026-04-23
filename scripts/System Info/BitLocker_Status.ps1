@@ -1,6 +1,6 @@
 # NAME: 🔒 BitLocker Status & Keys
 # DESCRIPTION: Show BitLocker encryption status and recovery keys for all drives
-# STYLE: Warning.TButton
+# STYLE: Info.TButton
 # INTERACTIVE: true
 
 # ============================================================
