@@ -76,4 +76,11 @@ def get_choco_sections():
             ("CrystalDiskInfo", "crystaldiskinfo"),
             ("Sysinternals Suite", "sysinternals"),
         ]),
+        
+        ("🏗️ Autodesk", [
+            ("DWG TrueView 2026", "choco install dwgtrueview --version=2026.25.1.60"),
+            ("AutoCAD 2026", "autocad --version=2026.25.1.60"),
+            ("Revit 2026", "revit --version=2026.0.4.409"),
+        ]),
+        
     ]
