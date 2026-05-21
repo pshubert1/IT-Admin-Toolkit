@@ -158,12 +158,34 @@ class ChocoTab:
                                       padding="8", style='Dark.TLabelframe')
         section_frame.pack(fill=tk.X, pady=(0, 8))
         
-        for app_name, choco_id in apps:
+        # Button row (create frame first, add buttons later)
+        btn_row = ttk.Frame(section_frame, style='Dark.TFrame')
+        btn_row.pack(fill=tk.X, pady=(0, 4))
+        
+        # Build checkboxes and collect vars
+        category_vars = []
+        
+        for app_entry in apps:
+            app_name = app_entry[0]
+            choco_id = app_entry[1]
+            version = app_entry[2] if len(app_entry) > 2 else None
+            
             var = tk.BooleanVar()
-            cb = ttk.Checkbutton(section_frame, text=f"☐ {app_name}", variable=var,
+            category_vars.append(var)
+            display = f"☐ {app_name}" + (f" (v{version})" if version else "")
+            cb = ttk.Checkbutton(section_frame, text=display, variable=var,
                                 style='DarkFrame.TCheckbutton')
             cb.pack(anchor='w', pady=2)
-            self.checkboxes[app_name] = (var, choco_id)
+            self.checkboxes[app_name] = (var, choco_id, version)
+        
+        # NOW add buttons (category_vars is fully populated)
+        ttk.Button(btn_row, text="Select All", style='Dark.TButton',
+                  command=lambda vs=category_vars: [v.set(True) for v in vs]
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_row, text="Deselect All", style='Dark.TButton',
+                  command=lambda vs=category_vars: [v.set(False) for v in vs]
+        ).pack(side=tk.LEFT)
+    
     
     def _on_canvas_configure(self, event):
         self.apps_canvas.itemconfig(self.canvas_window, width=event.width)
@@ -340,13 +362,56 @@ Write-Host "Close and reopen the IT Admin Toolkit to use Chocolatey features." -
     
     def _start_install(self):
         """Install all selected packages."""
-        selected = [(name, choco_id) for name, (var, choco_id) in self.checkboxes.items() if var.get()]
+        selected = []
+        for name, entry in self.checkboxes.items():
+            var = entry[0]
+            choco_id = entry[1]
+            version = entry[2] if len(entry) > 2 else None
+            if var.get():
+                selected.append((name, choco_id, version))
         
         if not selected:
             self.app.log_warning("Select at least one package")
             return
         
         self.app.log(f"🚀 Installing {len(selected)} packages...")
+        
+        def install_all():
+            self.app.root.after(0, lambda: self.install_btn.config(state='disabled'))
+            self.app.root.after(0, self.progress.start)
+            
+            for app_name, choco_id, version in selected:
+                self.app.root.after(0, lambda n=app_name: self.app.log(f"📥 Installing {n}..."))
+                
+                try:
+                    args = ["install", choco_id, "-y"]
+                    if version:
+                        args.extend(["--version", version])
+                    
+                    result = self._run_choco(args,
+                                           capture_output=True, text=True, timeout=600,
+                                           creationflags=subprocess.CREATE_NO_WINDOW)
+                    if result.returncode == 0:
+                        self.app.root.after(0, lambda n=app_name: self.app.log_success(f"{n} installed"))
+                    else:
+                        error = result.stderr.strip() or result.stdout.strip()
+                        self.app.root.after(0, lambda n=app_name, e=error: 
+                            self.app.log_error(f"{n} install failed",
+                                hint=f"{e[:200]}" if e else "Run as admin or check internet"))
+                except FileNotFoundError:
+                    self.app.root.after(0, lambda: self.app.log_error("Chocolatey not installed",
+                        hint="Click 'INSTALL CHOCO' first"))
+                    break
+                except Exception as e:
+                    self.app.root.after(0, lambda n=app_name, err=str(e): 
+                        self.app.log_error(f"{n} error: {err}"))
+            
+            self.app.root.after(0, lambda: self.app.log("🎉 All installations complete!"))
+            self.app.root.after(0, self.progress.stop)
+            self.app.root.after(0, lambda: self.install_btn.config(state='normal'))
+        
+        threading.Thread(target=install_all, daemon=True).start()
+        
         
         def install_all():
             self.app.root.after(0, lambda: self.install_btn.config(state='disabled'))

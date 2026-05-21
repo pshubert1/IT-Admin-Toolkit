@@ -57,4 +57,18 @@ def setup_styles(colors):
              background=[('selected', colors['accent'])],
              foreground=[('selected', 'white')])
     
+    # Treeview styles
+    style.configure('Dark.Treeview',
+                   background=colors['bg'],
+                   foreground=colors['fg'],
+                   fieldbackground=colors['bg'],
+                   rowheight=25)
+    style.configure('Dark.Treeview.Heading',
+                   background=colors['frame_bg'],
+                   foreground=colors['fg'],
+                   relief='flat')
+    style.map('Dark.Treeview',
+             background=[('selected', colors['accent'])],
+             foreground=[('selected', 'white')])
+    
     return style
