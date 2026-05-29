@@ -293,8 +293,10 @@ class UpdatesTab(ttk.Frame):
 
         def _install():
             try:
-                result = InstallService.install_updates(
-                    updates_to_install,
+                # Extract titles — InstallService expects a list of title strings
+                titles = [upd.title for upd in updates_to_install]
+                result = InstallService.download_and_install(
+                    titles,
                     progress_callback=lambda msg, lvl: self._queue.put(("progress", (msg, lvl)))
                 )
                 self._queue.put(("install_done", result))
@@ -302,6 +304,7 @@ class UpdatesTab(ttk.Frame):
                 self._queue.put(("error", str(e)))
 
         threading.Thread(target=_install, daemon=True).start()
+
 
     def _on_install_complete(self, result):
         self._set_buttons_enabled(True)
