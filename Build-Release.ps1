@@ -267,6 +267,20 @@ $pyinstallerArgs = @(
     "--add-data", "version.py;."
     "--uac-admin"
     "--clean"
+    # Hidden imports for Update tab services
+    "--hidden-import", "services"
+    "--hidden-import", "services.update_service"
+    "--hidden-import", "services.install_service"
+    "--hidden-import", "services.feature_update_service"
+    "--hidden-import", "services.reboot_service"
+    "--hidden-import", "models"
+    "--hidden-import", "models.update_info"
+    # pywin32 modules (needed by update services)
+    "--hidden-import", "win32com"
+    "--hidden-import", "win32com.client"
+    "--hidden-import", "pythoncom"
+    "--hidden-import", "pywintypes"
+    "--hidden-import", "win32api"
     "main.py"
 )
 
