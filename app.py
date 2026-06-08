@@ -38,7 +38,7 @@ class AppInstaller:
         self.root = root
         self.root.title(f"IT Admin Toolkit v{VERSION}")
         self.root.geometry("950x750")
-        self.root.minsize(600, 400)
+        self.root.minsize(600, 500)
         self.root.resizable(True, True)
         
         # Set window icon
@@ -141,7 +141,9 @@ class AppInstaller:
                        style='Dark.TCheckbutton').pack(side=tk.RIGHT, padx=(0, 15))
         
         # Paned window for resizable sections
-        self.main_paned = ttk.PanedWindow(main_container, orient=tk.VERTICAL)
+        self.main_paned = tk.PanedWindow(main_container, orient=tk.VERTICAL,
+                                         sashwidth=6, sashrelief=tk.RAISED,
+                                         bg=self.colors['bg'])
         self.main_paned.grid(row=1, column=0, sticky='nsew')
         
         # Top pane: Notebook (tabs)
@@ -181,7 +183,7 @@ class AppInstaller:
         self.installer_tab = self.winget_tab
         
         # Add notebook frame to paned window
-        self.main_paned.add(notebook_frame, weight=3)
+        self.main_paned.add(notebook_frame, minsize=200, stretch="always")
         
         # Bottom pane: Logs (resizable)
         self.create_resizable_logs(self.main_paned)
@@ -223,7 +225,7 @@ class AppInstaller:
         debug_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Activity Log (always visible)
-        log_frame = ttk.LabelFrame(logs_container, text="📋 Activity Log (drag edge to resize)", 
+        log_frame = ttk.LabelFrame(logs_container, text="📋 Activity Log", 
                                   padding="5", style='Dark.TLabelframe')
         log_frame.pack(fill=tk.BOTH, expand=True)
         
@@ -233,6 +235,12 @@ class AppInstaller:
         
         ttk.Button(log_btn_frame, text="🗑️ Clear Log", style='Dark.TButton',
                   command=self._clear_activity_log).pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Collapse/Expand toggle
+        self._log_collapsed = False
+        self._log_toggle_btn = ttk.Button(log_btn_frame, text="▼ Collapse", 
+                                          style='Dark.TButton', command=self._toggle_log)
+        self._log_toggle_btn.pack(side=tk.LEFT, padx=(0, 5))
         
         # Test button - only visible in debug mode
         self.test_log_btn = ttk.Button(log_btn_frame, text="🧪 TEST LOGS", style='Dark.TButton',
@@ -246,15 +254,52 @@ class AppInstaller:
         
         self.debug_mode.trace_add('write', toggle_test_btn)
         
-        # Activity log text widget
-        self.log_text = tk.Text(log_frame, height=4, bg=self.colors['bg'], fg=self.colors['fg'], 
-                               font=('Consolas', 9), state=tk.NORMAL, wrap=tk.WORD)
-        log_scroll = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.log_text.yview)
+        # Activity log text widget (in its own frame for easy collapse)
+        self._log_text_frame = ttk.Frame(log_frame, style='Dark.TFrame')
+        self._log_text_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.log_text = tk.Text(self._log_text_frame, height=4, bg=self.colors['bg'], 
+                               fg=self.colors['fg'], font=('Consolas', 9), 
+                               state=tk.NORMAL, wrap=tk.WORD)
+        log_scroll = ttk.Scrollbar(self._log_text_frame, orient=tk.VERTICAL, 
+                                  command=self.log_text.yview)
         self.log_text.config(yscrollcommand=log_scroll.set)
         self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
-        parent_paned.add(logs_container, weight=1)
+        parent_paned.add(logs_container, minsize=60, stretch="always")
+    
+    def _toggle_log(self):
+        """Collapse or expand the activity log text area."""
+        if self._log_collapsed:
+            self._log_text_frame.pack(fill=tk.BOTH, expand=True)
+            self._log_toggle_btn.configure(text="▼ Collapse")
+            self._log_collapsed = False
+        else:
+            self._log_text_frame.pack_forget()
+            self._log_toggle_btn.configure(text="▲ Expand")
+            self._log_collapsed = True
+    
+    @staticmethod
+    def create_scrollable_frame(parent):
+        """Create a scrollable frame for tab content."""
+        canvas = tk.Canvas(parent, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable = ttk.Frame(canvas, style='DarkBg.TFrame')
+        
+        scrollable.bind("<Configure>", 
+                       lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Match background color
+        canvas.configure(bg=parent.cget('background') if parent.cget('background') != 'SystemButtonFace' else '#1e1e2e')
+        
+        return scrollable
     
     def _clear_activity_log(self):
         """Clear the activity log."""
