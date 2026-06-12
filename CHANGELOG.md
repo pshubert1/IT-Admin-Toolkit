@@ -1,3 +1,15 @@
+## IT Admin Toolkit v0.0.38
+**Released:** 2026-06-12
+
+### Documentation
+- docs: update CHANGELOG.md for v0.0.37
+
+---
+### Download
+Download `IT-Admin-Toolkit.exe` below and run as Administrator.
+
+
+
 ## IT Admin Toolkit v0.0.37
 **Released:** 2026-06-12
 
@@ -71,6 +83,7 @@
 # Changelog
 
 ## v0.0.3 (2026-03-04 12:15)
+
 
 
 
