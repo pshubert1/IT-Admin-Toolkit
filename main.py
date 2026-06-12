@@ -3,7 +3,8 @@
 IT Admin Toolkit - Main Entry Point
 Run this file to start the application.
 """
-
+import ctypes
+import sys
 import tkinter as tk
 from app import AppInstaller
 import sys
@@ -15,6 +16,13 @@ if sys.platform == 'win32':
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('PShubert.ITAdminToolkit.1')
 
 def main():
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            'ITAdminToolkit.App.1'
+        )
+    except Exception:
+        pass
+    
     root = tk.Tk()
     app = AppInstaller(root)
     root.mainloop()

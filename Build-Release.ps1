@@ -435,7 +435,7 @@ $pyinstallerArgs = @(
     "--uac-admin"
     "--clean"
 
-    # === EXCLUDE UNUSED STDLIB (saves ~5-8 MB) ===
+# === EXCLUDE UNUSED STDLIB ===
     "--exclude-module", "matplotlib"
     "--exclude-module", "numpy"
     "--exclude-module", "pandas"
@@ -451,21 +451,16 @@ $pyinstallerArgs = @(
     "--exclude-module", "lib2to3"
     "--exclude-module", "distutils"
     "--exclude-module", "curses"
-    "--exclude-module", "asyncio"
-    "--exclude-module", "concurrent"
     "--exclude-module", "multiprocessing"
     "--exclude-module", "sqlite3"
-    "--exclude-module", "email"
     "--exclude-module", "http.server"
     "--exclude-module", "ftplib"
     "--exclude-module", "imaplib"
     "--exclude-module", "smtplib"
-    "--exclude-module", "decimal"
     "--exclude-module", "fractions"
     "--exclude-module", "statistics"
-    "--exclude-module", "argparse"
 
-    # === EXCLUDE UNUSED PYWIN32 (saves ~2-4 MB) ===
+    # === EXCLUDE UNUSED PYWIN32 ===
     "--exclude-module", "win32ui"
     "--exclude-module", "win32print"
     "--exclude-module", "win32clipboard"
