@@ -1,4 +1,4 @@
 """
 App version - auto-updated by Build-Release.ps1
 """
-VERSION = "0.0.37"
+VERSION = "0.0.38"
