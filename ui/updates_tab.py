@@ -43,6 +43,27 @@ class UpdatesTab(ttk.Frame):
         self._poll_queue()
         self.pack(fill=tk.BOTH, expand=True) 
 
+    def _on_tree_double_click(self, event):
+        """Open KB article in browser when double-clicking a row."""
+        import webbrowser
+        
+        item = self.tree.identify_row(event.y)
+        if not item:
+            return
+        
+        # Get the KB value from the row
+        values = self.tree.item(item, "values")
+        if not values or len(values) < 2:
+            return
+        
+        kb = values[1]  # KB is the second column
+        if kb and kb.strip():
+            # Clean up KB number (remove "KB" prefix if present)
+            kb_num = kb.strip().replace("KB", "").replace("kb", "")
+            url = f"https://support.microsoft.com/help/{kb_num}"
+            webbrowser.open(url)
+            self._log(f"Opened KB{kb_num} in browser", "info")
+
     # ─── Admin Check ─────────────────────────────────────────────
     @staticmethod
     def _check_admin() -> bool:
@@ -138,6 +159,7 @@ class UpdatesTab(ttk.Frame):
         self.tree.tag_configure("checked", foreground="#50fa7b")
         self.tree.tag_configure("unchecked", foreground="#f8f8f2")
         self.tree.bind("<Button-1>", self._on_tree_click)
+        self.tree.bind("<Double-1>", self._on_tree_double_click)
 
         # Track checked items
         self._checked_items = set()
@@ -305,7 +327,6 @@ class UpdatesTab(ttk.Frame):
 
         threading.Thread(target=_install, daemon=True).start()
 
-
     def _on_install_complete(self, result):
         self._set_buttons_enabled(True)
         self._log("Installation complete!", "success")
@@ -343,7 +364,6 @@ class UpdatesTab(ttk.Frame):
         except Exception as e:
             self._queue.put(("error", str(e)))
 
-
     # ─── Helpers ─────────────────────────────────────────────────
     def _set_buttons_enabled(self, enabled):
         state = "normal" if enabled else "disabled"
@@ -355,6 +375,8 @@ class UpdatesTab(ttk.Frame):
 
     @staticmethod
     def _format_size(size_bytes):
+        
+    
         if not size_bytes:
             return ""
         if size_bytes < 1024:

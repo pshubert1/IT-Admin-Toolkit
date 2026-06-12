@@ -28,6 +28,7 @@ $exclude = @(
     "-xr!__pycache__",
     "-xr!build",
     "-xr!dist",
+    "-xr!NotUsed",
     "-xr!release",
     "-xr!venv",
     "-xr!.venv",
