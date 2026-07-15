@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 import os
 from config.scripts import get_script_sections
+from ui.collapsible_frame import CollapsibleFrame
 from utils.network import NetworkDiagnostics
 from utils.profile_remover import open_profile_remover
 from utils.rmm_installer import open_rmm_installer
@@ -67,9 +68,13 @@ class ScriptsTab:
         script_sections = get_script_sections()
         
         for section_title, scripts in script_sections:
-            section_frame = ttk.LabelFrame(self.scripts_scrollable, text=section_title, 
-                                          padding="10", style='Dark.TLabelframe')
-            section_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+            # NEW
+            from ui.collapsible_frame import CollapsibleFrame
+
+            section = CollapsibleFrame(self.scripts_scrollable, title=section_title,
+                          style_colors=self.colors)
+            section.pack(fill=tk.X, padx=10, pady=(0, 10))
+            section_frame = section.content  # Everything else stays the same!
             
             for script_data in scripts:
                 # Handle both 4-item and 5-item tuples

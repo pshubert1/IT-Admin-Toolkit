@@ -5,6 +5,7 @@ Winget Tab UI
 import tkinter as tk
 from tkinter import ttk
 from config.winget import get_app_sections
+from ui.collapsible_frame import CollapsibleFrame
 
 
 class WingetTab:
@@ -59,9 +60,11 @@ class WingetTab:
     def _create_app_checkboxes(self, parent):
         """Create app category sections with checkboxes."""
         for category_name, apps, position in get_app_sections():
-            frame = ttk.LabelFrame(parent, text=category_name, 
-                                  padding="10", style='Dark.TLabelframe')
-            frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+            from ui.collapsible_frame import CollapsibleFrame
+
+            section = CollapsibleFrame(parent, title=category_name, style_colors=self.colors)
+            section.pack(fill=tk.X, padx=10, pady=(0, 10))
+            frame = section.content  # Everything else stays the same!
             
             # Select All / Deselect All for this category
             cat_btn_frame = ttk.Frame(frame, style='Dark.TFrame')

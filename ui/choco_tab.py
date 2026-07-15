@@ -9,6 +9,7 @@ import threading
 import os
 
 from config.choco_apps import get_choco_sections
+from ui.collapsible_frame import CollapsibleFrame
 
 
 class ChocoTab:
@@ -154,9 +155,11 @@ class ChocoTab:
     
     def _create_category(self, parent, category_name, apps):
         """Create a category section with checkboxes."""
-        section_frame = ttk.LabelFrame(parent, text=category_name, 
-                                      padding="8", style='Dark.TLabelframe')
-        section_frame.pack(fill=tk.X, pady=(0, 8))
+        from ui.collapsible_frame import CollapsibleFrame
+
+        section = CollapsibleFrame(parent, title=category_name, style_colors=self.colors)
+        section.pack(fill=tk.X, pady=(0, 8))
+        section_frame = section.content 
         
         # Button row (create frame first, add buttons later)
         btn_row = ttk.Frame(section_frame, style='Dark.TFrame')
